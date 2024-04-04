@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./ERC20.sol";
 
-contract TicketToken {
+contract TicketToken { //TKT
     ERC20 erc20Contract;
     uint256 supplyLimit;
     uint256 currentSupply;
@@ -15,27 +15,27 @@ contract TicketToken {
         supplyLimit = 1000000000;
     }
 
-    event creditChecked(uint256 credit);
+    event tKTChecked(uint256 credit);
 
-    function getCredit() public payable {
-        uint256 amt = msg.value / 10000000000000000; // Get Ticket tokens eligible
-        require(erc20Contract.totalSupply() + amt < supplyLimit, "Ticket supply is not enough");
+    function getTKT() public payable {
+        uint256 amt = msg.value / 10000000000000000; // Get TKT eligible
+        require(erc20Contract.totalSupply() + amt < supplyLimit, "TKT supply is not enough");
         // erc20Contract.transferFrom(owner, msg.sender, amt);
         erc20Contract.mint(msg.sender, amt);
         
     }
 
-    function checkCredit() public returns(uint256) {
+    function checkTKT() public returns(uint256) {
         uint256 credit = erc20Contract.balanceOf(msg.sender);
-        emit creditChecked(credit);
+        emit tKTChecked(credit);
         return credit;
     }
 
-    function transferCredit(address receipt, uint256 amt) public {
+    function transferTKT(address receipt, uint256 amt) public {
         erc20Contract.transfer(receipt, amt);
     }
 
-    function transferCreditFrom(address from, address to, uint256 amt) public {
+    function transferTKTFrom(address from, address to, uint256 amt) public {
         erc20Contract.transferFrom(from, to, amt);
     }
 
