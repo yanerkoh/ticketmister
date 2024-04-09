@@ -6,11 +6,10 @@ pragma experimental ABIEncoderV2;
  * @dev  Implements ticketing system along with its various functions
  */
 
-
 //import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v2.5.0/contracts/token/ERC721/ERC721.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
-//import "../node_modules/@openzeppelin/contracts/utils/Counters.sol"; 
+//import "../node_modules/@openzeppelin/contracts/utils/Counters.sol";
 //use uint256 private _tokenIds instead;
 //to increment: _tokenIds++;
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
@@ -23,66 +22,62 @@ contract TicketMister is ERC721URIStorage, Ownable {
 
     // 1 token = 1 ticket
 
-    // To keep track of how many events were created
-    uint256 private numberOfEvents = 0;
+    // counter for eventId - incremented each time a new event is created
+    uint256 private eventsCreated;
 
-    // tokenId => TicketInformation
-    // each token mapped to the respective ticket information
-    mapping(uint256 => TicketInformation) private ticketNFTS;
+    // counter for categoryId - incremented each time a new category is created
+    uint256 private categoriesCreated;
 
-    // user's address => array of tokenIds
-    // each user mapped to the array of tokenIds they own
-    mapping(address => uint256[]) private userTickets;
+    // counter for ticketId - incremented each time a new ticket is created
+    uint256 private ticketCreated;
 
-    // user's address => array of event information
-    // each user mapped to the array of events they created
-    mapping(address => EventInformation[]) private eventsCreatedByUser;
+    // ticketId mapped to TicketInfo struct
+    mapping(uint256 => TicketInfo) private tickets;
 
-    // eventId => event information
-    // each event mapped to the respective event information
-    mapping(uint256 => EventInformation) private allEvents;
+    // eventId mapped to EventInfo struct
+    mapping(uint256 => EventInfo) private events;
 
-    // eventId => array of tokenIds
-    // each event mapped to the array of tokenIds for that event
-    mapping(uint256 => uint256[]) private ticketsSoldForEvent;
-    
+    // categoryId mapped to CategoryInfo struct
+    mapping(uint256 => CategoryInfo) private categories;
+
+    // address of event organiser mapped to an array of eventIds
+    mapping(address => uint256[]) private eventsOrganised;
+
+    // address of owner mapped to array of ticketIds of the tickets they own
+    mapping(address => uint256[]) private ticketsOwned;
+
+    // eventId mapped to array of ticketIds of the sold tickets
+    mapping(uint256 => uint256[]) private ticketsSold;
+
     // array storing all of the events
-    EventInformation[] allEventsArray;
+    EventInfo[] allEventsArray;
 
-    struct TicketInformation {
-        
+    struct EventInfo {
         uint256 eventId;
-        
-        uint256 tokenId;
-        
-        uint256 price;
-        
-        address owner;
-        
-        bool isListed;
-        
-        string tokenURI;
-    }
-
-    struct EventInformation {
-        
-        string name;
-        
-        address creatorAddress;
-        
-        uint256 eventID; // based on uint256 private numberOfEvents
-        
-        uint256 ticketsForSale; // when initialising an event, use to define the number of tickets on sale 
-        
-        uint256 ticketsSold;
-        
-        uint256 maxTicketPrice;
-        
-        uint256 minTicketPrice;
-        
+        address organiser;
+        string eventName;
+        string eventDescription;
+        uint256 numberOfTickets; // total number of tickets for this event
+        uint256 soldTickets; // number of tickets currently sold for this event
+        uint256 maxResalePercentage; // maximum percentage that the ticket price can be resold for - might be complicated with decimals
         bool isActive;
-        
-        uint256 ticketPrice;
+        CategoryInfo[] ticketCatgories;
     }
 
+    struct CategoryInfo {
+        uint256 eventId; // event that this category is tagged to
+        string categoryName;
+        string description;
+        uint256 ticketPrice;
+        uint256 numberOfTickets; // number of tickets for this category
+    }
+
+    struct TicketInfo {
+        uint256 eventId; // event that this category is tagged to
+        uint256 categoryId; // where is our categoryId generated from?
+        address owner;
+        uint256 originalPrice;
+        bool isForSale;
+        uint256 resalePrice;
+    }
 }
