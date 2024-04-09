@@ -60,7 +60,6 @@ contract ERC20 {
     mapping (address => mapping (address => uint256)) internal allowed;
     mapping(address => uint256) balances;
     
-    
     string public constant name = "DiceToken";
     string public constant symbol = "DT";
     uint8 public constant decimals = 18;
@@ -70,10 +69,6 @@ contract ERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Mint(address indexed to, uint256 amount);
     event MintFinished();
-
-  
-
-
 
   /**
   * @dev total number of tokens in existence
@@ -91,7 +86,6 @@ contract ERC20 {
     return balances[_owner];
   }
 
-
   /**
   * @dev transfer token for a specified address
   * @param _to The address to transfer to.
@@ -106,8 +100,6 @@ contract ERC20 {
     emit Transfer(tx.origin, _to, _value);
     return true;
   }
-
-
 
   /**
    * @dev Transfer tokens from one address to another
@@ -153,7 +145,6 @@ contract ERC20 {
     return allowed[_owner][_spender];
   }
   
-  
     /**
    * @dev Function to mint tokens
    * @param _to The address that will receive the minted tokens.
@@ -183,19 +174,13 @@ contract ERC20 {
       return owner;
   }
   
-  
-   modifier onlyOwner() {
+  modifier onlyOwner() {
     require(msg.sender == owner);
     _;
   }
-  
   
   modifier canMint() {
     require(!mintingFinished);
     _;
   }
-
-
-
-    
 }
