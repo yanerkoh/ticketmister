@@ -16,7 +16,7 @@ import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
-contract TicketSmartContract is ERC721URIStorage, Ownable {
+contract TicketMister is ERC721URIStorage, Ownable {
     uint256 private _tokenIds;
 
     constructor() ERC721("TEST", "TEST") {}
