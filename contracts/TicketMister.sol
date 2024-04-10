@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.6.0 <0.9.0;
 pragma experimental ABIEncoderV2;
-/**
- * @title TicketSmartContract
- * @dev  Implements ticketing system along with its various functions
- */
 
 //import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v2.5.0/contracts/token/ERC721/ERC721.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -16,8 +12,6 @@ import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 contract TicketMister is ERC721URIStorage, Ownable {
-    uint256 private _tokenIds;
-
     constructor() ERC721("TicketMister", "TMT") {}
 
     // 1 token = 1 ticket
@@ -61,11 +55,12 @@ contract TicketMister is ERC721URIStorage, Ownable {
         uint256 soldTickets; // number of tickets already sold for this event - updated when someone buys from organiser
         uint256 maxResalePercentage; // maximum percentage that the ticket price can be resold for - might be complicated with decimals
         bool isActive;
-        CategoryInfo[] ticketCategories;
+        uint256[] categoryIds; // list of categoryIds for this event
     }
 
     struct CategoryInfo {
         uint256 eventId; // event that this category is tagged to
+        uint256 categoryId;
         string categoryName;
         string description;
         uint256 ticketPrice;
@@ -74,7 +69,8 @@ contract TicketMister is ERC721URIStorage, Ownable {
 
     struct TicketInfo {
         uint256 eventId; // event that this category is tagged to
-        uint256 categoryId; // where is our categoryId generated from?
+        uint256 categoryId; // category that this ticket is tagged to
+        uint256 ticketId;
         address owner;
         uint256 originalPrice;
         bool isForSale;
@@ -100,7 +96,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
             0,
             maxResalePercentage,
             true,
-            new CategoryInfo[](0)
+            new uint256[](0)
         );
 
         // Update events mapping (eventId => EventInfo)
@@ -120,13 +116,14 @@ contract TicketMister is ERC721URIStorage, Ownable {
         string memory description,
         uint256 ticketPrice,
         uint256 numberOfTickets
-    ) private onlyOrganiser(eventId) {
+    ) public onlyOrganiser(eventId) {
         categoryIdCounter++;
         uint256 newCategoryId = categoryIdCounter;
 
         // Create new category struct
         CategoryInfo memory newCategory = CategoryInfo(
             eventId,
+            newCategoryId,
             categoryName,
             description,
             ticketPrice,
@@ -137,7 +134,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
         categories[newCategoryId] = newCategory;
 
         // push new category to event's ticketCategories array
-        events[eventId].ticketCategories.push(newCategory);
+        events[eventId].categoryIds.push(newCategoryId);
 
         // mint tickets for this category
         mintTickets(
@@ -173,6 +170,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
             TicketInfo memory newTicket = TicketInfo(
                 eventId,
                 categoryId,
+                newTicketId,
                 owner,
                 ticketPrice,
                 true, // when minted, will be for sale
@@ -204,5 +202,26 @@ contract TicketMister is ERC721URIStorage, Ownable {
         uint256 eventId
     ) private view returns (address) {
         return events[eventId].organiser;
+    }
+
+    // This is the function to see all of the tickets being sold for a specific event
+    function viewAllEventTickets(
+        uint256 eventId
+    ) public view returns (TicketInfo[] memory) {
+        require(eventId <= eventIdCounter, "This event doesn't exist");
+        uint256[] memory ticketIdsForSale = ticketsForSale[eventId];
+        TicketInfo[] memory allEventTickets = new TicketInfo[](
+            ticketIdsForSale.length
+        );
+        for (
+            uint256 counter = 0;
+            counter < ticketIdsForSale.length;
+            counter++
+        ) {
+            uint256 ticketId = ticketIdsForSale[counter];
+            TicketInfo memory ticketInfo = tickets[ticketId];
+            allEventTickets[counter] = ticketInfo;
+        }
+        return (allEventTickets);
     }
 }
