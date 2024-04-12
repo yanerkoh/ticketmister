@@ -77,6 +77,16 @@ contract TicketMister is ERC721URIStorage, Ownable {
         uint256 resalePrice;
     }
 
+    // Events
+    event eventCreated(uint256 eventId, string eventName, address organiser);
+    event ticketSold(
+        uint256 ticketId,
+        address buyer,
+        address seller,
+        uint256 price
+    );
+    //event ticketForResale(address seller, uint256 amount); // emitted when listing ticket (NOT by organisers)
+
     // function to create a new event - anyone can create a new event
     function createEvent(
         string memory eventName,
@@ -107,6 +117,8 @@ contract TicketMister is ERC721URIStorage, Ownable {
 
         // push new event to eventsOrganised mapping (organiser => eventId[])
         eventsOrganised[msg.sender].push(newEventId);
+
+        emit eventCreated(newEventId, eventName, msg.sender);
     }
 
     // user needs to create event first before they can create category and mint tickets for that event
@@ -152,7 +164,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
 
     // this function will be called when createCategory is called, to mint the tickets for that respective category
     function mintTickets(
-        address to, // address of owner (im unsure what the use of this is but we follow github for now)
+        address to, // address of owner (im unsure what the use of this is - 'to' & 'owner' are the same address when minting)
         uint256 eventId, // will be generated when event is created
         uint256 categoryId, // will be generated when category is created
         uint256 numberOfTickets,
@@ -187,6 +199,113 @@ contract TicketMister is ERC721URIStorage, Ownable {
             ticketsOwned[owner].push(newTicketId);
         }
     }
+
+    function buyTicket(uint256 ticketId) public payable {
+        require(_exists(ticketId), "This ticket doesn't exist!");
+        TicketInfo memory ticketInfo = tickets[ticketId];
+        address previousOwner = ticketInfo.owner;
+        require(ticketInfo.isForSale, "This ticket is not for sale!");
+        require(
+            msg.value == ticketInfo.resalePrice,
+            "You must pay the exact amount that this is listed for!"
+        );
+        require(msg.sender != previousOwner, "You already own this ticket!");
+        address payable ownerPayable = payable(previousOwner);
+
+        // transfer ticket to new owner
+        transferTicket(previousOwner, msg.sender, ticketId);
+        ownerPayable.transfer(msg.value);
+
+        // update respective ticketInfo
+        tickets[ticketId].owner = msg.sender;
+        tickets[ticketId].isForSale = false;
+        tickets[ticketId].resalePrice = 0;
+
+        // remove ticket from ticketsOwned for previous owner
+        for (
+            // iterate through ticketsOwned for previous owner
+            uint256 index = 0;
+            index < ticketsOwned[previousOwner].length;
+            index++
+        ) {
+            // find the ticketId in the array
+            if (ticketsOwned[previousOwner][index] == ticketId) {
+                removeTicketFromTicketsOwned(previousOwner, index);
+                break;
+            }
+        }
+
+        // add ticket to new owner
+        ticketsOwned[msg.sender].push(ticketId);
+
+        // remove ticket from ticketsForSale for event
+        for (
+            // iterate through ticketsForSale for event
+            uint256 index = 0;
+            index < ticketsForSale[ticketInfo.eventId].length;
+            index++
+        ) {
+            // find the ticketId in the array
+            if (ticketsForSale[ticketInfo.eventId][index] == ticketId) {
+                removeTicketFromTicketsForSale(ticketInfo.eventId, index);
+                break;
+            }
+        }
+
+        // update eventInfo if ticket was bought from organiser
+        if (previousOwner == events[ticketInfo.eventId].organiser) {
+            events[ticketInfo.eventId].soldTickets++;
+        }
+
+        emit ticketSold(ticketId, msg.sender, previousOwner, msg.value);
+    }
+
+    function removeTicketFromTicketsOwned(
+        address owner,
+        uint256 index
+    ) private {
+        // index = index of ticket to remove
+        for (
+            uint256 index = index;
+            index < ticketsOwned[owner].length - 1;
+            index++
+        ) {
+            // shift all tickets from index onwards, to the left
+            ticketsOwned[owner][index] = userTickets[owner][index + 1];
+        }
+
+        // remove last element
+        ticketsOwned[owner].pop();
+    }
+
+    function removeTicketFromTicketsForSale(
+        uint256 eventId,
+        uint256 index
+    ) private {
+        // index = index of ticket to remove
+        for (
+            uint256 index = index;
+            index < ticketsForSale[eventId].length - 1;
+            index++
+        ) {
+            // shift all tickets from index onwards, to the left
+            ticketsForSale[eventId][index] = ticketsForSale[eventId][index + 1];
+        }
+
+        // remove last element
+        ticketsForSale[eventId].pop();
+    }
+
+    function transferTicket(
+        address from,
+        address to,
+        uint256 ticketId
+    ) private {
+        require(ownerOf(ticketId) == from, "Ticket not owned by sender");
+        require(to != address(0), "Invalid recipient address");
+        require(from != address(0), "Invalid sender address");
+        _transfer(from, to, ticketId);
+    } // im not sure whether this works - because we completely remove 'tokens'
 
     // only the organiser can execute a specific function
     modifier onlyOrganiser(uint256 eventId) {
@@ -223,5 +342,37 @@ contract TicketMister is ERC721URIStorage, Ownable {
             allEventTickets[counter] = ticketInfo;
         }
         return (allEventTickets);
+    }
+
+    function getEventInfo(
+        uint256 eventId
+    )
+        public
+        view
+        returns (
+            uint256,
+            address,
+            string memory,
+            string memory,
+            uint256,
+            uint256,
+            uint256,
+            bool,
+            uint256[] memory
+        )
+    {
+        require(eventId <= eventIdCounter, "This event does not exist");
+        EventInfo memory eventInfo = events[eventId];
+        return (
+            eventInfo.eventId,
+            eventInfo.organiser,
+            eventInfo.eventName,
+            eventInfo.eventDescription,
+            eventInfo.numberOfTickets,
+            eventInfo.soldTickets,
+            eventInfo.maxResalePercentage,
+            eventInfo.isActive,
+            eventInfo.categoryIds
+        );
     }
 }
