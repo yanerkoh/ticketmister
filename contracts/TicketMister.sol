@@ -265,13 +265,9 @@ contract TicketMister is ERC721URIStorage, Ownable {
         uint256 index
     ) private {
         // index = index of ticket to remove
-        for (
-            uint256 index = index;
-            index < ticketsOwned[owner].length - 1;
-            index++
-        ) {
+        for (uint256 i = index; i < ticketsOwned[owner].length - 1; i++) {
             // shift all tickets from index onwards, to the left
-            ticketsOwned[owner][index] = userTickets[owner][index + 1];
+            ticketsOwned[owner][i] = ticketsOwned[owner][i + 1];
         }
 
         // remove last element
@@ -283,13 +279,9 @@ contract TicketMister is ERC721URIStorage, Ownable {
         uint256 index
     ) private {
         // index = index of ticket to remove
-        for (
-            uint256 index = index;
-            index < ticketsForSale[eventId].length - 1;
-            index++
-        ) {
+        for (uint256 i = index; i < ticketsForSale[eventId].length - 1; i++) {
             // shift all tickets from index onwards, to the left
-            ticketsForSale[eventId][index] = ticketsForSale[eventId][index + 1];
+            ticketsForSale[eventId][i] = ticketsForSale[eventId][i + 1];
         }
 
         // remove last element
