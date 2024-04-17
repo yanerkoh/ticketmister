@@ -88,8 +88,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
     event ticketListedForResale(
         uint256 ticketId,
         address seller,
-        uint256 newResalePrice,
-        uint256 resalePercentage
+        uint256 price
     ); // emitted when listing ticket (NOT by organisers)
     event ticketUnlistedFromResale(uint256 ticketId, address seller);
 
@@ -266,59 +265,48 @@ contract TicketMister is ERC721URIStorage, Ownable {
         emit ticketSold(ticketId, msg.sender, previousOwner, msg.value);
     }
 
-    /*
     // Function to list a ticket for resale
-    function listTicketForResale(
-        uint256 ticketId,
-        uint256 resalePercentage
-    ) public {
+    function listTicketForResale(uint256 ticketId, uint256 price) public {
         require(ownerOf(ticketId) == msg.sender, "You don't own this ticket");
-        TicketInfo storage ticket = tickets[ticketId];
+        TicketInfo memory ticket = tickets[ticketId];
         require(ticket.isForSale == false, "Ticket is already listed for sale");
         require(ticket.resalePrice == 0, "Ticket is already listed for resale");
-        require(
-            resalePercentage > 0 && resalePercentage <= 100,
-            "Invalid resale percentage"
-        );
 
-        // Calculate resale price based on the resale percentage
-        uint256 newResalePrice = ticket.originalPrice.mul(resalePercentage).div(
-            100
+        // Calculate max resale price based on the resale percentage
+        EventInfo memory eventInfo = events[ticket.eventId];
+        uint256 maxResalePrice = (ticket.originalPrice *
+            eventInfo.maxResalePercentage) / 100;
+
+        require(
+            price <= maxResalePrice,
+            "Resale price cannot be higher than the maximum resale price"
         );
 
         // Update ticket info
-        ticket.resalePrice = newResalePrice;
-        ticket.resalePercentage = resalePercentage;
+        ticket.resalePrice = price;
         ticket.isForSale = true;
 
         // Add ticket to ticketsForSale mapping
         ticketsForSale[ticket.eventId].push(ticketId);
 
-        emit ticketListedForResale(
-            ticketId,
-            msg.sender,
-            newResalePrice,
-            resalePercentage
-        );
+        emit ticketListedForResale(ticketId, msg.sender, price);
     }
 
     // Function to unlist a ticket from resale
     function unlistTicketFromResale(uint256 ticketId) public {
         require(ownerOf(ticketId) == msg.sender, "You don't own this ticket");
-        TicketInfo storage ticket = tickets[ticketId];
+        TicketInfo memory ticket = tickets[ticketId];
         require(ticket.isForSale == true, "Ticket is not listed for resale");
 
         // Update ticket info
         ticket.isForSale = false;
         ticket.resalePrice = 0;
-        ticket.resalePercentage = 0;
 
         // Remove ticket from ticketsForSale mapping
         removeTicketFromTicketsForSale(ticket.eventId, ticketId);
 
         emit ticketUnlistedFromResale(ticketId, msg.sender);
     }
-    */
 
     function removeTicketFromTicketsOwned(
         address owner,
