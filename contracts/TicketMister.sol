@@ -427,4 +427,53 @@ contract TicketMister is ERC721URIStorage, Ownable {
             eventInfo.categoryIds
         );
     }
+
+    function getCategoryInfo(
+        uint256 categoryId
+    )
+        public
+        view
+        returns (
+            uint256,
+            uint256,
+            string memory,
+            string memory,
+            uint256,
+            uint256
+        )
+    {
+        require(
+            categoryId <= categoryIdCounter,
+            "This category does not exist"
+        );
+        CategoryInfo memory categoryInfo = categories[categoryId];
+        return (
+            categoryInfo.eventId,
+            categoryInfo.categoryId,
+            categoryInfo.categoryName,
+            categoryInfo.description,
+            categoryInfo.ticketPrice,
+            categoryInfo.numberOfTickets
+        );
+    }
+
+    function getTicketInfo(
+        uint256 ticketId
+    )
+        public
+        view
+        returns (uint256, uint256, uint256, address, uint256, bool, uint256)
+    {
+        require(ticketId <= ticketIdCounter, "This ticket does not exist");
+        TicketInfo memory ticketInfo = tickets[ticketId];
+        return (
+            ticketInfo.eventId,
+            ticketInfo.categoryId,
+            ticketInfo.ticketId,
+            ticketInfo.owner,
+            ticketInfo.originalPrice,
+            ticketInfo.isForSale,
+            ticketInfo.resalePrice
+        );
+    }
 }
