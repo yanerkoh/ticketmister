@@ -43,6 +43,9 @@ contract TicketMister is ERC721URIStorage, Ownable {
     // eventId mapped to array of ticketIds of all tickets on sale (whether first sale or resale)
     mapping(uint256 => uint256[]) private ticketsForSale;
 
+    // eventId mapped to array of ticketIds of all tickets sold
+    mapping(uint256 => uint256[]) private ticketsSold;
+
     // array storing all of the events
     EventInfo[] allEventsArray;
 
@@ -77,8 +80,9 @@ contract TicketMister is ERC721URIStorage, Ownable {
         uint256 resalePrice;
     }
 
-    // Events
+    // Events Emitted
     event eventCreated(uint256 eventId, string eventName, address organiser);
+
     event ticketSold(
         uint256 ticketId,
         address buyer,
@@ -91,6 +95,12 @@ contract TicketMister is ERC721URIStorage, Ownable {
         uint256 price
     ); // emitted when listing ticket (NOT by organisers)
     event ticketUnlistedFromResale(uint256 ticketId, address seller);
+
+    // emitted when organiser updates event details
+    event EventDetailsUpdated(uint eventId, string eventName, string eventDescription, uint256 maxResalePercentage);
+
+    // emitted to check max resale price calculated
+    event MaxResalePriceCalculated(uint maxResalePrice);
 
     // function to create a new event - anyone can create a new event
     function createEvent(
@@ -225,6 +235,9 @@ contract TicketMister is ERC721URIStorage, Ownable {
         tickets[ticketId].owner = msg.sender;
         tickets[ticketId].isForSale = false;
         tickets[ticketId].resalePrice = 0;
+        
+        // Update ticketsSold mapping
+        ticketsSold[ticketInfo.eventId].push(ticketId);
 
         // remove ticket from ticketsOwned for previous owner
         for (
@@ -273,9 +286,9 @@ contract TicketMister is ERC721URIStorage, Ownable {
         require(ticket.resalePrice == 0, "Ticket is already listed for resale");
 
         // Calculate max resale price based on the resale percentage
-        EventInfo memory eventInfo = events[ticket.eventId];
-        uint256 maxResalePrice = (ticket.originalPrice *
-            eventInfo.maxResalePercentage) / 100;
+        EventInfo memory eventInfo = events[ticket.eventId];  
+        uint256 maxResalePrice = ticket.originalPrice * ((eventInfo.maxResalePercentage / 100) + 1);
+
 
         require(
             price <= maxResalePrice,
@@ -283,8 +296,8 @@ contract TicketMister is ERC721URIStorage, Ownable {
         );
 
         // Update ticket info
-        ticket.resalePrice = price;
-        ticket.isForSale = true;
+        tickets[ticketId].resalePrice = price;
+        tickets[ticketId].isForSale = true;
 
         // Add ticket to ticketsForSale mapping
         ticketsForSale[ticket.eventId].push(ticketId);
@@ -299,8 +312,8 @@ contract TicketMister is ERC721URIStorage, Ownable {
         require(ticket.isForSale == true, "Ticket is not listed for resale");
 
         // Update ticket info
-        ticket.isForSale = false;
-        ticket.resalePrice = 0;
+        tickets[ticketId].isForSale = false;
+        tickets[ticketId].resalePrice = 0;
 
         // Remove ticket from ticketsForSale mapping
         removeTicketFromTicketsForSale(ticket.eventId, ticketId);
@@ -347,20 +360,17 @@ contract TicketMister is ERC721URIStorage, Ownable {
         _transfer(from, to, ticketId);
     } // im not sure whether this works - because we completely remove 'tokens'
 
-    // only the organiser can execute a specific function
-    modifier onlyOrganiser(uint256 eventId) {
-        address eventOrganiserAddress = getEventOrganiserAddress(eventId);
-        require(
-            msg.sender == eventOrganiserAddress,
-            "Only the organiser of this event can execute this"
-        );
-        _;
-    }
 
-    function getEventOrganiserAddress(
-        uint256 eventId
-    ) private view returns (address) {
-        return events[eventId].organiser;
+    // This is the function for a ticket owners to transfer multiple tickets
+    function transferMultipleTickets(address to, uint256[] memory ticketIds) public {
+        for (uint256 i = 0; i < ticketIds.length; i++) {
+            uint256 ticketId = ticketIds[i];
+            require(ownerOf(ticketId) == msg.sender, "You don't own all of these tickets");
+            // Transfer ticket to new owner
+            transferTicket(msg.sender, to, ticketId);
+            // Update ticket owner in storage
+            tickets[ticketId].owner = to;
+        }
     }
 
     // This is the function to see all of the tickets being sold for a specific event
@@ -382,6 +392,83 @@ contract TicketMister is ERC721URIStorage, Ownable {
             allEventTickets[counter] = ticketInfo;
         }
         return (allEventTickets);
+    }
+
+    // This is the function for organisers to cancel an event
+    function cancelEventAndRefund(uint256 eventId) public onlyOrganiser(eventId) {
+        EventInfo storage eventInfo = events[eventId];
+        require(eventInfo.isActive, "Event is not active");
+
+        // Refund ticket holders
+        uint256[] memory ticketsSoldForEvent = ticketsSold[eventId];
+        for (uint256 i = 0; i < ticketsSoldForEvent.length; i++) {
+            uint256 ticketId = ticketsSoldForEvent[i];
+            address payable ticketOwner = payable(ownerOf(ticketId));
+            uint256 resalePrice = tickets[ticketId].resalePrice;
+            if (resalePrice > 0) {
+                ticketOwner.transfer(resalePrice);
+            } else {
+                ticketOwner.transfer(tickets[ticketId].originalPrice);
+            }
+
+            // Clear ticket ownership and remove it from mappings
+            _transfer(ticketOwner, address(0), ticketId);
+            delete tickets[ticketId];
+        }
+        
+        // Unlist remaining tickets for sale
+        delete ticketsForSale[eventId];
+
+        // Mark event as inactive
+        events[eventId].isActive = false;
+    }
+
+
+    // This function is for event organisers to update event details 
+    function updateEventDetails(
+        uint256 eventId,
+        string memory eventName,
+        string memory eventDescription,
+        uint256 maxResalePercentage
+    ) public onlyOrganiser(eventId) {
+        EventInfo storage eventInfo = events[eventId];
+        
+        // Check if the event is active
+        require(eventInfo.isActive, "Event is not active");
+
+        // Update event details
+        events[eventId].eventName = eventName;
+        events[eventId].eventDescription = eventDescription;
+        events[eventId].maxResalePercentage = maxResalePercentage;
+        
+        emit EventDetailsUpdated(eventId, eventName, eventDescription, maxResalePercentage);
+    }
+
+
+    function viewMyTickets() public view returns (TicketInfo[] memory) {
+        uint256[] memory ticketIds = ticketsOwned[msg.sender];
+        TicketInfo[] memory myTickets = new TicketInfo[](ticketIds.length);
+        for (uint256 i = 0; i < ticketIds.length; i++) {
+            uint256 ticketId = ticketIds[i];
+            myTickets[i] = tickets[ticketId];
+        }
+        return myTickets;
+    }
+
+    // only the organiser can execute a specific function
+    modifier onlyOrganiser(uint256 eventId) {
+        address eventOrganiserAddress = getEventOrganiserAddress(eventId);
+        require(
+            msg.sender == eventOrganiserAddress,
+            "Only the organiser of this event can execute this"
+        );
+        _;
+    }
+
+    function getEventOrganiserAddress(
+        uint256 eventId
+    ) private view returns (address) {
+        return events[eventId].organiser;
     }
 
     function getEventInfo(
