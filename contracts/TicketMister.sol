@@ -46,6 +46,10 @@ contract TicketMister is ERC721URIStorage, Ownable {
     // eventId mapped to array of ticketIds of all tickets sold
     mapping(uint256 => uint256[]) private ticketsSold;
 
+    // mapping from user address to rewards balance
+    mapping(address => uint256) public rewardsBalance;
+
+
     // array storing all of the events
     EventInfo[] allEventsArray;
 
@@ -82,6 +86,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
 
     // Events Emitted
     event eventCreated(uint256 eventId, string eventName, address organiser);
+    event RewardEarned(address indexed user, uint256 rewardsEarned);
 
     event ticketSold(
         uint256 ticketId,
@@ -227,9 +232,24 @@ contract TicketMister is ERC721URIStorage, Ownable {
         require(msg.sender != previousOwner, "You already own this ticket!");
         address payable ownerPayable = payable(previousOwner);
 
+         // Apply automatic rewards redemption
+        uint256 discount = 0;
+        if (rewardsBalance[msg.sender] >= 100) { 
+            discount = (msg.value / 100) * 1 ether; // maybe change to wei?
+            if (discount > msg.value) {
+                discount = msg.value;
+            }
+            rewardsBalance[msg.sender] -= 100; // Deduct 100 rewards
+        }
+        uint256 payableValue = msg.value - discount; //the payable value needs to change due to rewards
+
+        // Calculate rewards for the buyer
+        uint256 rewardsEarned = (msg.value * 10) / 100; // 10% of ticket price as rewards
+        rewardsBalance[msg.sender] += rewardsEarned;
+
         // transfer ticket to new owner
         transferTicket(previousOwner, msg.sender, ticketId);
-        ownerPayable.transfer(msg.value);
+        ownerPayable.transfer(payableValue);
 
         // update respective ticketInfo
         tickets[ticketId].owner = msg.sender;
@@ -276,6 +296,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
         }
 
         emit ticketSold(ticketId, msg.sender, previousOwner, msg.value);
+        emit RewardEarned(msg.sender, rewardsEarned);
     }
 
     // Function to list a ticket for resale
@@ -552,3 +573,4 @@ contract TicketMister is ERC721URIStorage, Ownable {
         );
     }
 }
+
