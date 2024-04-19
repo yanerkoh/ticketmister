@@ -10,9 +10,16 @@ import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 //to increment: _tokenIds++;
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "./RewardToken.sol";
 
 contract TicketMister is ERC721URIStorage, Ownable {
+    RewardToken public rewardToken;
+
     constructor() ERC721("TicketMister", "TMT") {}
+
+    constructor(address _rewardTokenAddress) ERC721("TicketMister", "TMT") {
+        rewardToken = RewardToken(_rewardTokenAddress); // Initialize the RewardToken contract instance
+    }
 
     // 1 token = 1 ticket
 
@@ -47,8 +54,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
     mapping(uint256 => uint256[]) private ticketsSold;
 
     // mapping from user address to rewards balance
-    mapping(address => uint256) public rewardsBalance;
-
+    //mapping(address => uint256) public rewardsBalance;
 
     // array storing all of the events
     EventInfo[] allEventsArray;
@@ -86,7 +92,6 @@ contract TicketMister is ERC721URIStorage, Ownable {
 
     // Events Emitted
     event eventCreated(uint256 eventId, string eventName, address organiser);
-    event RewardEarned(address indexed user, uint256 rewardsEarned);
 
     event ticketSold(
         uint256 ticketId,
@@ -102,7 +107,12 @@ contract TicketMister is ERC721URIStorage, Ownable {
     event ticketUnlistedFromResale(uint256 ticketId, address seller);
 
     // emitted when organiser updates event details
-    event EventDetailsUpdated(uint eventId, string eventName, string eventDescription, uint256 maxResalePercentage);
+    event EventDetailsUpdated(
+        uint eventId,
+        string eventName,
+        string eventDescription,
+        uint256 maxResalePercentage
+    );
 
     // emitted to check max resale price calculated
     event MaxResalePriceCalculated(uint maxResalePrice);
@@ -220,6 +230,8 @@ contract TicketMister is ERC721URIStorage, Ownable {
         }
     }
 
+    event RewardEarned(address indexed recipient, uint256 amount);
+
     function buyTicket(uint256 ticketId) public payable {
         require(_exists(ticketId), "This ticket doesn't exist!");
         TicketInfo memory ticketInfo = tickets[ticketId];
@@ -232,20 +244,17 @@ contract TicketMister is ERC721URIStorage, Ownable {
         require(msg.sender != previousOwner, "You already own this ticket!");
         address payable ownerPayable = payable(previousOwner);
 
-         // Apply automatic rewards redemption
+        // Redemption logic
         uint256 discount = 0;
-        if (rewardsBalance[msg.sender] >= 100) { 
-            discount = (msg.value / 100) * 1 ether; // maybe change to wei?
-            if (discount > msg.value) {
-                discount = msg.value;
-            }
-            rewardsBalance[msg.sender] -= 100; // Deduct 100 rewards
+        if (rewardToken.balanceOf(msg.sender) >= 100) {
+            discount = (msg.value / 100); // Calculate discount
+            rewardToken.burnFrom(msg.sender, 100); // Burn tokens for redemption
         }
-        uint256 payableValue = msg.value - discount; //the payable value needs to change due to rewards
+        uint256 payableValue = msg.value - discount;
 
-        // Calculate rewards for the buyer
+        // Calculate rewards earned
         uint256 rewardsEarned = (msg.value * 10) / 100; // 10% of ticket price as rewards
-        rewardsBalance[msg.sender] += rewardsEarned;
+        rewardToken.mint(msg.sender, rewardsEarned); // Mint rewards instead of adding to a balance
 
         // transfer ticket to new owner
         transferTicket(previousOwner, msg.sender, ticketId);
@@ -255,7 +264,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
         tickets[ticketId].owner = msg.sender;
         tickets[ticketId].isForSale = false;
         tickets[ticketId].resalePrice = 0;
-        
+
         // Update ticketsSold mapping
         ticketsSold[ticketInfo.eventId].push(ticketId);
 
@@ -307,9 +316,9 @@ contract TicketMister is ERC721URIStorage, Ownable {
         require(ticket.resalePrice == 0, "Ticket is already listed for resale");
 
         // Calculate max resale price based on the resale percentage
-        EventInfo memory eventInfo = events[ticket.eventId];  
-        uint256 maxResalePrice = ticket.originalPrice * ((eventInfo.maxResalePercentage / 100) + 1);
-
+        EventInfo memory eventInfo = events[ticket.eventId];
+        uint256 maxResalePrice = ticket.originalPrice *
+            ((eventInfo.maxResalePercentage / 100) + 1);
 
         require(
             price <= maxResalePrice,
@@ -381,12 +390,17 @@ contract TicketMister is ERC721URIStorage, Ownable {
         _transfer(from, to, ticketId);
     } // im not sure whether this works - because we completely remove 'tokens'
 
-
     // This is the function for a ticket owners to transfer multiple tickets
-    function transferMultipleTickets(address to, uint256[] memory ticketIds) public {
+    function transferMultipleTickets(
+        address to,
+        uint256[] memory ticketIds
+    ) public {
         for (uint256 i = 0; i < ticketIds.length; i++) {
             uint256 ticketId = ticketIds[i];
-            require(ownerOf(ticketId) == msg.sender, "You don't own all of these tickets");
+            require(
+                ownerOf(ticketId) == msg.sender,
+                "You don't own all of these tickets"
+            );
             // Transfer ticket to new owner
             transferTicket(msg.sender, to, ticketId);
             // Update ticket owner in storage
@@ -416,7 +430,9 @@ contract TicketMister is ERC721URIStorage, Ownable {
     }
 
     // This is the function for organisers to cancel an event
-    function cancelEventAndRefund(uint256 eventId) public onlyOrganiser(eventId) {
+    function cancelEventAndRefund(
+        uint256 eventId
+    ) public onlyOrganiser(eventId) {
         EventInfo storage eventInfo = events[eventId];
         require(eventInfo.isActive, "Event is not active");
 
@@ -436,7 +452,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
             _transfer(ticketOwner, address(0), ticketId);
             delete tickets[ticketId];
         }
-        
+
         // Unlist remaining tickets for sale
         delete ticketsForSale[eventId];
 
@@ -444,8 +460,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
         events[eventId].isActive = false;
     }
 
-
-    // This function is for event organisers to update event details 
+    // This function is for event organisers to update event details
     function updateEventDetails(
         uint256 eventId,
         string memory eventName,
@@ -453,7 +468,7 @@ contract TicketMister is ERC721URIStorage, Ownable {
         uint256 maxResalePercentage
     ) public onlyOrganiser(eventId) {
         EventInfo storage eventInfo = events[eventId];
-        
+
         // Check if the event is active
         require(eventInfo.isActive, "Event is not active");
 
@@ -461,10 +476,14 @@ contract TicketMister is ERC721URIStorage, Ownable {
         events[eventId].eventName = eventName;
         events[eventId].eventDescription = eventDescription;
         events[eventId].maxResalePercentage = maxResalePercentage;
-        
-        emit EventDetailsUpdated(eventId, eventName, eventDescription, maxResalePercentage);
-    }
 
+        emit EventDetailsUpdated(
+            eventId,
+            eventName,
+            eventDescription,
+            maxResalePercentage
+        );
+    }
 
     function viewMyTickets() public view returns (TicketInfo[] memory) {
         uint256[] memory ticketIds = ticketsOwned[msg.sender];
@@ -573,4 +592,3 @@ contract TicketMister is ERC721URIStorage, Ownable {
         );
     }
 }
-
