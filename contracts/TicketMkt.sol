@@ -25,7 +25,7 @@ contract TicketMkt {
         string memory eventName,
         string memory eventDescription,
         uint256 maxResalePercentage
-    ) private returns (uint256 eventId) {
+    ) public returns (uint256 eventId) {
         eventId = IEventMgmtInstance.createEvent(
             eventName,
             eventDescription,
@@ -40,7 +40,7 @@ contract TicketMkt {
         string memory categoryDescription,
         uint256 ticketPrice,
         uint256 numberOfTickets
-    ) private onlyEventOrganiser(eventId) returns (uint256 categoryId) {
+    ) public onlyEventOrganiser(eventId) returns (uint256 categoryId) {
         categoryId = IEventMgmtInstance.createCategory(
             eventId,
             categoryName,
