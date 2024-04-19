@@ -60,8 +60,8 @@ contract ERC20 {
     mapping (address => mapping (address => uint256)) internal allowed;
     mapping(address => uint256) balances;
     
-    string public constant name = "DiceToken";
-    string public constant symbol = "DT";
+    string public constant name = "TicketToken";
+    string public constant symbol = "TKT";
     uint8 public constant decimals = 18;
     uint256 totalSupply_;
   
