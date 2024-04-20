@@ -114,8 +114,35 @@ contract TicketMkt {
                 break;
             }
         }
-
         emit ticketBought(ticketId, msg.sender, currentOwner);
+    }
+
+    function listTicketForResale(uint256 ticketId, uint256 resalePrice) public {
+        require(
+            IEventMgmtInstance.getTicketOwner(ticketId) == msg.sender,
+            "You do not own this ticket!"
+        );
+        require(
+            IEventMgmtInstance.isForSale(ticketId) == false,
+            "This ticket is already listed for sale!"
+        );
+        require(
+            resalePrice <= IEventMgmtInstance.calculateMaxResalePrice(ticketId),
+            "Resale price cannot be higher than the maximum resale price!"
+        );
+        IEventMgmtInstance.listTicketForResale(ticketId, resalePrice);
+    }
+
+    function unlistTicketFromResale(uint256 ticketId) public {
+        require(
+            IEventMgmtInstance.getTicketOwner(ticketId) == msg.sender,
+            "You do not own this ticket!"
+        );
+        require(
+            IEventMgmtInstance.isForSale(ticketId) == true,
+            "This ticket is not listed for sale!"
+        );
+        IEventMgmtInstance.unlistTicketForResale(ticketId);
     }
 
     function removeTicketFromTicketsOwned(address owner, uint256 index)

@@ -28,8 +28,10 @@ interface IEventMgmt {
     function isForSale(uint256 ticketId) external view returns (bool);
     function getTicketPrice(uint256 ticketId) external view returns (uint256);
 
-    function transferTicket(uint256 ticketId, address newOwner) external;
-    
+    function transferTicket(uint256 ticketId, address newOwner) external; 
+    function calculateMaxResalePrice(uint256 ticketId) external view returns (uint256);
+    function listTicketForResale(uint256 ticketId, uint256 resalePrice) external;
+    function unlistTicketFromResale(uint256 ticketId) external;
 }
 
 contract EventMgmt is IEventMgmt {
@@ -191,6 +193,20 @@ contract EventMgmt is IEventMgmt {
 
     function transferTicket(uint256 ticketId, address newOwner) public override {
         ITicketMgmtInstance.transferTicket(ticketId, newOwner);
+    }
+
+    function calculateMaxResalePrice(uint256 ticketId) public view override returns (uint256) {
+        uint256 originalPrice = ITicketMgmtInstance.getOriginalTicketPrice(ticketId);
+        uint256 maxResalePercentage = events[ITicketMgmtInstance.getEventId(ticketId)].maxResalePercentage;
+        return originalPrice + (originalPrice * maxResalePercentage / 100);
+    }
+
+    function listTicketForResale(uint256 ticketId, uint256 resalePrice) public override {
+        ITicketMgmtInstance.listTicketForResale(ticketId, resalePrice);
+    } 
+
+    function unlistTicketFromResale(uint256 ticketId) public override {
+        ITicketMgmtInstance.unlistTicketFromResale(ticketId);
     }
 
     function getEventId(uint256 ticketId) public view override returns (uint256) {

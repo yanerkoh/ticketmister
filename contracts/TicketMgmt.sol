@@ -22,6 +22,8 @@ interface ITicketMgmt {
     function getResaleTicketPrice(uint256 ticketId) external view returns (uint256);
 
     function transferTicket(uint256 ticketId, address newOwner) external;
+    function listTicketForResale(uint256 ticketId, uint256 resalePrice) external;
+    function unlistTicketFromResale(uint256 ticketId) external;
 }
 
 contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
@@ -45,6 +47,8 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
 
     event TicketsCreated(uint256 eventId, uint256 categoryId, uint256 numberOfTickets, address owner);
     event TicketTransferred(uint256 ticketId, address previousOwner, address newOwner);
+    event TicketListForResale(uint256 ticketId, address owner, uint256 resalePrice);
+    event TicketUnListedFromResale(uint256 ticketId, address owner);
 
     function createTickets(
         uint256 eventId,
@@ -111,7 +115,20 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         address currentOwner = tickets[ticketId].owner;
         _transfer(currentOwner, newOwner, ticketId);
         tickets[ticketId].owner = newOwner;
+        tickets[ticketId].isOnSale = false;
         emit TicketTransferred(ticketId, currentOwner, newOwner);
     }
 
+    function listTicketForResale(uint256 ticketId, uint256 resalePrice) public override {
+        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
+        tickets[ticketId].isOnSale = true;
+        tickets[ticketId].resalePrice = resalePrice;
+        emit TicketListedForResale(ticketId, tx.origin, resalePrice);
+    }
+
+    function unlistTicketFromResale(uint256 ticketId) public {
+        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
+        tickets[ticketId].isOnSale = false;
+        emit TicketUnlistedFromResale(ticketId, tx.origin);
+    }
 }
