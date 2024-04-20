@@ -221,6 +221,22 @@ contract TicketMkt {
         return IEventMgmtInstance.getEventInfo(eventId);
     }
 
+    function getCategoryInfo(
+        uint256 categoryId
+    )
+        public
+        view
+        returns (
+            uint256 eventId,
+            string memory categoryName,
+            string memory categoryDescription,
+            uint256 ticketPrice,
+            uint256[] memory ticketIds
+        )
+    {
+        return IEventMgmtInstance.getCategoryInfo(categoryId);
+    }
+
     function getEventTickets(
         uint256 eventId
     ) public view returns (uint256[] memory eventTickets) {

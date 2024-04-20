@@ -31,12 +31,28 @@ interface IEventMgmt {
             bool isActive,
             uint256[] memory categoryIds
         );
+
+    function getCategoryInfo(
+        uint256 categoryId
+    )
+        external
+        view
+        returns (
+            uint256 eventId,
+            string memory categoryName,
+            string memory categoryDescription,
+            uint256 ticketPrice,
+            uint256[] memory ticketIds
+        );
+
     function getEventTickets(
         uint256 eventId
     ) external view returns (uint256[] memory tickets);
+
     function getCategoryTickets(
         uint256 categoryId
     ) external view returns (uint256[] memory tickets);
+
     function isEventOrganiser(
         uint256 eventId,
         address user
@@ -210,6 +226,34 @@ contract EventMgmt is IEventMgmt {
         );
     }
 
+    function getCategoryInfo(
+        uint256 categoryId
+    )
+        public
+        view
+        override
+        returns (
+            uint256,
+            string memory,
+            string memory,
+            uint256,
+            uint256[] memory
+        )
+    {
+        require(
+            (categoryId >= 0) && (categoryId < categoryCounter),
+            "Category does not exist!"
+        );
+        CategoryInfo memory categoryInfo = categories[categoryId];
+        return (
+            categoryInfo.eventId,
+            categoryInfo.categoryName,
+            categoryInfo.categoryDescription,
+            categoryInfo.ticketPrice,
+            categoryInfo.ticketIds
+        );
+    }
+
     function getEventTickets(
         uint256 eventId
     ) public view override returns (uint256[] memory) {
@@ -228,8 +272,8 @@ contract EventMgmt is IEventMgmt {
             (categoryId >= 0) && (categoryId < categoryCounter),
             "Category does not exist!"
         );
-        uint256[] memory tickets = categories[categoryId].ticketIds;
-        return tickets;
+        uint256[] memory categoryTickets = categories[categoryId].ticketIds;
+        return categoryTickets;
     }
 
     function isEventOrganiser(
