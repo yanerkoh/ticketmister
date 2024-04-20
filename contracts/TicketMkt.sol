@@ -7,13 +7,18 @@ import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./EventMgmt.sol";
 import "./TicketMgmt.sol";
 
+//import "./RewardToken.sol";
+
 contract TicketMkt {
     using SafeMath for uint256;
 
     IEventMgmt private IEventMgmtInstance;
 
+    //RewardToken private rewardToken;
+
     constructor(address _eventMgmtAddress) {
         IEventMgmtInstance = IEventMgmt(_eventMgmtAddress);
+        //rewardToken = RewardToken(_rewardTokenAddress);
     }
 
     // address of event organiser mapped to an array of eventIds
@@ -109,7 +114,6 @@ contract TicketMkt {
             ticketsOwned[msg.sender].push(tickets[i]);
             ticketsOnSale[eventId].push(tickets[i]);
         }
-
         emit TicketCategoryCreated(
         categoryId,
         eventId,
@@ -118,7 +122,6 @@ contract TicketMkt {
         ticketPrice,
         numberOfTickets
     );
-        
     }
 
     function updateEventDescription(
@@ -334,10 +337,7 @@ contract TicketMkt {
             IEventMgmtInstance.isForSale(ticketId) == false,
             "This ticket is listed for sale! Unlist it to gift it!"
         );
-        require(
-            recipient != address(0),
-            "Invalid recipient!"
-        );
+        require(recipient != address(0), "Invalid recipient!");
         IEventMgmtInstance.giftTicket(ticketId, recipient);
         emit ticketGifted(ticketId, recipient);
     }
@@ -469,15 +469,25 @@ contract TicketMkt {
     /**
         Getter functions (State variables)
     */
-    function getEventsOrganised() public view returns (uint256[] memory eventIds) {
+    function getEventsOrganised()
+        public
+        view
+        returns (uint256[] memory eventIds)
+    {
         return eventsOrganised[msg.sender];
     }
 
-    function getTicketsOwned() public view returns (uint256[] memory ticketIds) {
+    function getTicketsOwned()
+        public
+        view
+        returns (uint256[] memory ticketIds)
+    {
         return ticketsOwned[msg.sender];
     }
 
-    function getTicketsOnSale(uint256 eventId) public view returns (uint256[] memory ticketIds) {
+    function getTicketsOnSale(
+        uint256 eventId
+    ) public view returns (uint256[] memory ticketIds) {
         return ticketsOnSale[eventId];
     }
 
