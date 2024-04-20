@@ -96,7 +96,7 @@ contract EventMgmt is IEventMgmt {
         EventInfo memory newEvent = EventInfo({
             eventId: eventId,
             eventName: eventName,
-            eventOrganiser: msg.sender,
+            eventOrganiser: tx.origin,
             eventDescription: eventDescription,
             maxResalePercentage: maxResalePercentage,
             isActive: true,
@@ -108,7 +108,7 @@ contract EventMgmt is IEventMgmt {
         emit EventCreated(
             eventId,
             eventName,
-            msg.sender,
+            tx.origin,
             eventDescription,
             maxResalePercentage
         );
