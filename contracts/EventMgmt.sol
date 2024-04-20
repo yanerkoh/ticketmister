@@ -198,8 +198,15 @@ contract EventMgmt is IEventMgmt {
         });
         events[eventId] = newEvent;
 
+        emit EventCreated(
+            eventId,
+            eventName,
+            tx.origin,
+            eventDescription,
+            maxResalePercentage
+        );
     }
-
+    
     function createCategory(
         uint256 eventId,
         string memory categoryName,
