@@ -64,6 +64,61 @@ contract TicketMkt {
         }
     }
 
+    function updateEventDescription(
+        uint256 eventId,
+        string memory newDescription
+    ) public onlyEventOrganiser(eventId) {
+        IEventMgmtInstance.updateEventDescription(eventId, newDescription);
+    }
+
+    function updateMaxResalePercentage(
+        uint256 eventId,
+        uint256 newMaxPercentage
+    ) public onlyEventOrganiser(eventId) {
+        IEventMgmtInstance.updateMaxResalePercentage(eventId, newMaxPercentage);
+    }
+
+    function cancelEventAndRefund(
+        uint256 eventId
+    ) public onlyEventOrganiser(eventId) {
+        uint256[] memory eventTickets = getEventTickets(eventId);
+        for (uint256 index = 0; index < eventTickets.length; index++) {
+            uint256 ticketId = eventTickets[index];
+            address ticketOwner = IEventMgmtInstance.getTicketOwner(ticketId);
+
+            // remove from ticketsOwned
+            for (
+                // iterate through ticketsOwned for previous owner
+                uint256 i = 0;
+                i < ticketsOwned[ticketOwner].length;
+                i++
+            ) {
+                // find the ticketId in the array
+                if (ticketsOwned[ticketOwner][index] == ticketId) {
+                    removeTicketFromTicketsOwned(ticketOwner, i);
+                    break;
+                }
+            }
+
+            // remove from ticketsOnSale
+            if (IEventMgmtInstance.isForSale(ticketId)) {
+                for (
+                    // iterate through ticketsForSale for event
+                    uint256 j = 0;
+                    j < ticketsOnSale[eventId].length;
+                    j++
+                ) {
+                    // find the ticketId in the array
+                    if (ticketsOnSale[eventId][index] == ticketId) {
+                        removeTicketFromTicketsOnSale(eventId, j);
+                        break;
+                    }
+                }
+            }
+        }
+        IEventMgmtInstance.cancelEventAndRefund(eventId);
+    }
+
     /**
         Main Functions For Ticket Buyers
      */

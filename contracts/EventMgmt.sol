@@ -18,6 +18,18 @@ interface IEventMgmt {
         uint256 numberOfTickets
     ) external returns (uint256 categoryId);
 
+    function updateEventDescription(
+        uint256 eventId,
+        string memory newDescription
+    ) external;
+
+    function updateMaxResalePercentage(
+        uint256 eventId,
+        uint256 newMaxResalePercentage
+    ) external;
+
+    function cancelEventAndRefund(uint256 eventId) external;
+
     function getEventInfo(
         uint256 eventId
     )
@@ -139,6 +151,15 @@ contract EventMgmt is IEventMgmt {
         uint256 maxResalePercentage
     );
 
+    event EventDescriptionUpdated(uint256 eventId, string newDescription);
+
+    event EventMaxResalePercentageUpdated(
+        uint256 eventId,
+        uint256 newMaxResalePercentage
+    );
+
+    event EventCancelledAndRefunded(uint256 eventId);
+
     event CategoryCreated(
         uint256 categoryId,
         uint256 eventId,
@@ -214,6 +235,48 @@ contract EventMgmt is IEventMgmt {
             numberOfTickets
         );
         return categoryId;
+    }
+
+    function updateEventDescription(
+        uint256 eventId,
+        string memory newDescription
+    ) external override {
+        require(
+            (eventId >= 0) && (eventId < eventCounter),
+            "Event does not exist!"
+        );
+        events[eventId].eventDescription = newDescription;
+        emit EventDescriptionUpdated(eventId, newDescription);
+    }
+
+    function updateMaxResalePercentage(
+        uint256 eventId,
+        uint256 newMaxResalePercentage
+    ) external override {
+        require(
+            (eventId >= 0) && (eventId < eventCounter),
+            "Event does not exist!"
+        );
+        events[eventId].maxResalePercentage = newMaxResalePercentage;
+        emit EventMaxResalePercentageUpdated(eventId, newMaxResalePercentage);
+    }
+
+    function cancelEventAndRefund(uint256 eventId) external override {
+        require(
+            (eventId >= 0) && (eventId < eventCounter),
+            "Event does not exist!"
+        );
+        require(events[eventId].isActive, "Event is not active!");
+
+        uint256[] memory eventTickets = events[eventId].ticketIds;
+        for (uint256 index = 0; index < eventTickets.length; index++) {
+            uint256 ticketId = eventTickets[index];
+            if (getTicketOwner(ticketId) != tx.origin) {
+                ITicketMgmtInstance.cancelTicketAndRefund(ticketId);
+            }
+        }
+        events[eventId].isActive = false;
+        emit EventCancelledAndRefunded(eventId);
     }
 
     function getEventInfo(
