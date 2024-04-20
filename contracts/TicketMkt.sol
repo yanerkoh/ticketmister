@@ -76,12 +76,12 @@ contract TicketMkt {
         address currentOwner = IEventMgmtInstance.getTicketOwner(ticketId);
         require(msg.sender != currentOwner, "You already own this ticket!");
 
+        // transfer to new owner
+        IEventMgmtInstance.transferTicket(ticketId, msg.sender);
+
         // pay current owner
         address payable ownerPayable = payable(currentOwner);
         ownerPayable.transfer(msg.value);
-
-        // transfer to new owner
-        IEventMgmtInstance.transferTicket(ticketId, msg.sender);
 
         // update mappings
         for (
@@ -145,10 +145,22 @@ contract TicketMkt {
         ticketsOnSale[eventId].pop();
     }
 
+    function getEventCategories(uint256 eventId) view public returns (uint256[] memory eventCategories) {
+        return IEventMgmtInstance.getEventCategories(eventId);
+    }
+
+    function getEventTickets(uint256 eventId) view public returns (uint256[] memory eventTickets) {
+        return IEventMgmtInstance.getEventTickets(eventId);
+    }
+
+    function getCategoryTickets(uint256 categoryId) view public returns (uint256[] memory categoryTickets) {
+        return IEventMgmtInstance.getCategoryTickets(categoryId);
+    }
+
     modifier onlyEventOrganiser(uint256 eventId) {
         require(
             IEventMgmtInstance.isEventOrganiser(eventId, msg.sender),
-            "Only event organiser can perform this action"
+            "Only event organiser can perform this action!"
         );
         _;
     }
