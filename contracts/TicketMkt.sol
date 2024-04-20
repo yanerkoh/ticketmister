@@ -78,20 +78,20 @@ contract TicketMkt {
         IEventMgmtInstance.updateMaxResalePercentage(eventId, newMaxPercentage);
     }
 
-    function getRefundAmount(
-        uint256 eventId
-    ) public onlyEventOrganiser(eventId) returns (uint256 refundAmount) {
-        uint256[] memory eventTickets = getEventTickets(eventId);
-        unt256 refundAmount = 0;
-        for (uint256 index = 0; index < eventTickets.length; index++) {
-            uint256 ticketId = eventTickets[index];
-            address ticketOwner = IEventMgmtInstance.getTicketOwner(ticketId);
-            if (ticketOwner != msg.sender) {
-                refundAmount += IEventMgmtInstance.getTicketPrice(ticketId);
-            }
-        }
-        return refundAmount;
-    }
+    //function getRefundAmount(
+    //    uint256 eventId
+    //) public onlyEventOrganiser(eventId) returns (uint256 refundAmount) {
+    //    uint256[] memory eventTickets = getEventTickets(eventId);
+    //    uint256 refundAmount = 0;
+    //    for (uint256 index = 0; index < eventTickets.length; index++) {
+    //        uint256 ticketId = eventTickets[index];
+    //        address ticketOwner = IEventMgmtInstance.getTicketOwner(ticketId);
+    //        if (ticketOwner != msg.sender) {
+    //            refundAmount += IEventMgmtInstance.getTicketPrice(ticketId);
+    //        }
+    //    }
+    //    return refundAmount;
+    //}
 
     function cancelEventAndRefund(
         uint256 eventId
@@ -212,6 +212,7 @@ contract TicketMkt {
         IEventMgmtInstance.listTicketForResale(ticketId, resalePrice);
         ticketsOnSale[IEventMgmtInstance.getEventId(ticketId)].push(ticketId);
     }
+
 
     function unlistTicketFromResale(uint256 ticketId) public {
         require(

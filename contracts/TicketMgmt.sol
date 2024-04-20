@@ -233,7 +233,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         emit TicketListedForResale(ticketId, tx.origin, resalePrice);
     }
 
-    function unlistTicketFromResale(uint256 ticketId) public {
+    function unlistTicketFromResale(uint256 ticketId) public override{
         require(
             (ticketId >= 0) && (ticketId < ticketCounter),
             "Ticket does not exist!"
@@ -241,4 +241,5 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         tickets[ticketId].isOnSale = false;
         emit TicketUnlistedFromResale(ticketId, tx.origin);
     }
+    
 }
