@@ -13,17 +13,13 @@ contract("TicketMister Tests", (accounts) => {
 
   before(async () => {
     // Deploy TicketMgmt contract
-    ticketMgmtInstance = await TicketMgmt.new({ from: accounts[1] });
+    ticketMgmtInstance = await TicketMgmt.deployed();
 
     // Deploy EventMgmt contract with TicketMgmt address
-    eventMgmtInstance = await EventMgmt.new(ticketMgmtInstance.address, {
-        from: accounts[1],
-    });
+    eventMgmtInstance = await EventMgmt.deployed();
 
     // Deploy TicketMkt contract with EventMgmt address
-    ticketMktInstance = await TicketMkt.new(eventMgmtInstance.address, {
-        from: accounts[1],
-    });
+    ticketMktInstance = await TicketMkt.deployed();
   });
 
   it("Testing Deployment of Contracts", async () => {
@@ -93,6 +89,8 @@ contract("TicketMister Tests", (accounts) => {
   });
 
   it("Test Creation of Category and Minting of Tickets", async () => {
+    const eventId = 1;
+
     const categoryName = "Test Cat";
 
     const categoryDescription = "This is a test category.";
@@ -102,7 +100,7 @@ contract("TicketMister Tests", (accounts) => {
     const numberOfTickets = 100;
 
     const createCategoryResult = await ticketMktInstance.createTicketCategory(
-      1,
+      eventId,
       categoryName,
       categoryDescription,
       ticketPrice,
