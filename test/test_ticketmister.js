@@ -171,68 +171,85 @@ contract("TicketMister Tests", (accounts) => {
   });
 */
 
+
   it("#7 Test Buy Tickets - For Ticket Buyers", async () => {
+
     const ticketPrice = web3.utils.toWei("1", "ether");
-    const eventId = 1;  // Replace eventId with a created event id
-    const ticketId = 101;  // Replace ticketId with a created ticket id
+    const payableValue = ticketPrice
+    const ticketId = 1;
 
-      //List a ticket for sale
-      await ticketMktInstance.listTicketForResale(ticketId, ticketPrice, { from: user1 });
+    // List the ticket for sale at full price
+    // await ticketMktInstance.listTicketForResale(ticketId, ticketPrice, { from: owner });
 
-      //User2 buys the ticket
-      const result = await ticketMktInstance.buyTicket(ticketId, {
-        from: user2,
-        value: ticketPrice
-      });
-
-      //Ensure the ticket is transferred to user2
-      const ownerOfTicket = await ticketMgmtInstance.getTicketOwner(ticketId);
-      assert.equal(ownerOfTicket, user2, "The ticket owner should be user2 after purchase");
-
-      //Check for the 'ticketBought' event
-      assert.equal(result.logs[0].event, "ticketBought", "Event ticketBought should be emitted");
-      assert.equal(result.logs[0].args.buyer, user2, "The buyer in the event should be user2");
+    // User1 buys the ticket with exact discounted price
+    const result = await ticketMktInstance.buyTicket(ticketId, {
+      from: user1,
+      value: payableValue
     });
-  
+
+    // Ensure the ticket is transferred to user1
+    const ownerOfTicket = await ticketMgmtInstance.getTicketOwner(ticketId);
+    assert.equal(ownerOfTicket, user1, "The ticket owner should be user1 after purchase");
+
+    // Check for the 'ticketBought' event and 'RewardEarned' event
+    assert.equal(result.logs[0].event, "ticketBought", "Event ticketBought should be emitted");
+    assert.equal(result.logs[1].event, "RewardEarned", "Event RewardEarned should be emitted");
+    assert.equal(result.logs[0].args.buyer, user1, "The buyer in the event should be user1");
+
+  });
+
 
 
   it("#8 Test List Tickets for Resale - For Resellers", async () => {
-    const resalePrice = web3.utils.toWei("2", "ether");
-    const ticketId = 101;  // Replace with a ticket that user1 owns
+    const resalePrice = web3.utils.toWei("1", "ether");
+    const ticketId = 1;  // Replace with a ticket that user1 owns
 
     //User1 lists the ticket for resale
     await ticketMktInstance.listTicketForResale(ticketId, resalePrice, { from: user1 });
 
-    //Check if the ticket is marked as for sale
-    const ticketInfo = await ticketMgmtInstance.getTicketInfo(ticketId);
-    assert.equal(ticketInfo.isOnSale, true, "Ticket should be marked as for sale");
-    assert.equal(ticketInfo.resalePrice, resalePrice, "Resale price should be set correctly");
+
+    // Check if the ticket is in the ticketsOnSale list for its event
+    const eventId = 1; // Get the event ID from the ticket info
+    const ticketsOnSale = await ticketMktInstance.getTicketsOnSale(eventId);
+    assert.isTrue(ticketsOnSale.includes(ticketId), "Ticket should be listed in the tickets on sale for its event");
   });
 
-
-  it("#9 Test Gift Ticket - For Resellers", async () => {
-
-    const ticketId = 101;  //Assuming user1 owns this ticket and it's not for sale
-
-      //User1 gifts the ticket to user2
-      await ticketMktInstance.giftTicket(ticketId, user2, { from: user1 });
-
-      //Ensure the ticket is transferred to user2
-      const ownerOfTicket = await ticketMgmtInstance.getTicketOwner(ticketId);
-      assert.equal(ownerOfTicket, user2, "The ticket owner should be user2 after gifting");
-    });
-
-
   it("#10 Test Unlist Ticket from Resale - For Resellers", async () => {
-    const ticketId = 101;  //Assuming user1 owns this ticket and it's for sale
+    const resalePrice = web3.utils.toWei("1", "ether");
+    const ticketId = 1;  
+
 
     //User1 unlists the ticket from resale
     await ticketMktInstance.unlistTicketFromResale(ticketId, { from: user1 });
 
-    //Check if the ticket is unmarked as for sale
-    const ticketInfo = await ticketMgmtInstance.getTicketInfo(ticketId);
-    assert.equal(ticketInfo.isOnSale, false, "Ticket should be unmarked as for sale");
+    // Check if the ticket is removed from ticketsOnSale list for its event
+    const eventId = 1; // Get the event ID from the ticket info
+    const ticketsOnSale = await ticketMktInstance.getTicketsOnSale(eventId);
+    assert.isFalse(ticketsOnSale.includes(ticketId), "Ticket should not be listed in the tickets on sale for its event");
   });
+
+
+  it("#9 Test Gift Ticket - For Resellers", async () => {
+    const ticketPrice = web3.utils.toWei("1", "ether");
+    const payableValue = ticketPrice
+    const ticketId = 2;
+
+
+    // User1 buys the ticket 
+    const result = await ticketMktInstance.buyTicket(ticketId, {
+      from: user1,
+      value: payableValue
+    });
+
+  
+    //User1 gifts the ticket to user2
+    await ticketMktInstance.giftTicket(ticketId, user2, { from: user1 });
+
+    //Ensure the ticket is transferred to user2
+    const ownerOfTicket = await ticketMgmtInstance.getTicketOwner(ticketId);
+    assert.equal(ownerOfTicket, user2, "The ticket owner should be user2 after gifting");
+  });
+
 
 
 
