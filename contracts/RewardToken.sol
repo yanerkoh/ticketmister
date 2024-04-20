@@ -9,12 +9,12 @@ contract RewardToken is ERC20, Ownable {
     constructor() ERC20("RewardToken", "RT") {}
 
     // Function to mint new reward tokens
-    function mint(address to, uint256 amount) public onlyOwner {
+    function mint(address to, uint256 amount) public {
         _mint(to, amount);
     }
 
     // Function to burn reward tokens for redeeming them
-    function burnFrom(address account, uint256 amount) public onlyOwner {
+    function burnFrom(address account, uint256 amount) public {
         _burn(account, amount);
     }
 

@@ -6,17 +6,19 @@ import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./EventMgmt.sol";
 import "./TicketMgmt.sol";
-import "./RewardToken.sol";
+
+//import "./RewardToken.sol";
 
 contract TicketMkt {
     using SafeMath for uint256;
 
     IEventMgmt private IEventMgmtInstance;
-    RewardToken private rewardToken;
 
-    constructor(address _eventMgmtAddress, address _rewardTokenAddress) {
+    //RewardToken private rewardToken;
+
+    constructor(address _eventMgmtAddress) {
         IEventMgmtInstance = IEventMgmt(_eventMgmtAddress);
-        rewardToken = RewardToken(_rewardTokenAddress);
+        //rewardToken = RewardToken(_rewardTokenAddress);
     }
 
     // address of event organiser mapped to an array of eventIds
@@ -25,6 +27,8 @@ contract TicketMkt {
     mapping(address => uint256[]) private ticketsOwned;
     // eventId mapped to array of ticketIds of all tickets on sale (whether first sale or resale)
     mapping(uint256 => uint256[]) private ticketsOnSale;
+
+    mapping(address => uint256) private rewardPoints;
 
     event EventCreated(
         uint256 eventId,
@@ -196,25 +200,26 @@ contract TicketMkt {
         );
 
         uint256 ticketPrice = IEventMgmtInstance.getTicketPrice(ticketId);
+
+        // Redemption logic
+        uint256 discount = 0;
+        if (rewardPoints[msg.sender] == 1000) {
+            discount = 10 * (rewardPoints[msg.sender] / 1000); // Calculate discount
+            rewardPoints[msg.sender] = rewardPoints[msg.sender] % 1000; // Deduct reward points
+        }
+        uint256 payableValue = ticketPrice - discount;
+
         require(
-            msg.value == ticketPrice,
+            msg.value == payableValue,
             "You must pay the exact amount that this is listed for!"
         );
 
         address currentOwner = IEventMgmtInstance.getTicketOwner(ticketId);
         require(msg.sender != currentOwner, "You already own this ticket!");
 
-        // Redemption logic
-        uint256 discount = 0;
-        if (rewardToken.balanceOf(msg.sender) >= 100) {
-            discount = (msg.value / 100); // Calculate discount
-            rewardToken.burnFrom(msg.sender, 100); // Burn tokens for redemption
-        }
-        uint256 payableValue = msg.value - discount;
-
         // Calculate rewards earned
-        uint256 rewardsEarned = (msg.value * 10) / 100; // 10% of ticket price as rewards
-        rewardToken.mint(msg.sender, rewardsEarned);
+        uint256 rewardsEarned = (payableValue * 10) / 100; // 10% of ticket price as rewards
+        rewardPoints[msg.sender] += rewardsEarned;
 
         // transfer to new owner
         IEventMgmtInstance.transferTicket(ticketId, msg.sender);
@@ -256,6 +261,12 @@ contract TicketMkt {
         }
         emit ticketBought(ticketId, msg.sender, currentOwner);
         emit RewardEarned(msg.sender, rewardsEarned);
+    }
+
+    function checkRewardPointsBalance(
+        address account
+    ) public view returns (uint256) {
+        return rewardPoints[account];
     }
 
     /**
