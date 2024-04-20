@@ -12,6 +12,10 @@ contract TicketMkt {
 
     IEventMgmt private IEventMgmtInstance;
 
+    constructor(address _eventMgmtAddress) {
+        IEventMgmtInstance = IEventMgmt(_eventMgmtAddress);
+    }
+
     // address of event organiser mapped to an array of eventIds
     mapping(address => uint256[]) private eventsOrganised;
     // address of owner mapped to array of ticketIds of the tickets they own

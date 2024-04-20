@@ -35,6 +35,10 @@ contract EventMgmt is IEventMgmt {
 
     ITicketMgmt private ITicketMgmtInstance;
 
+    constructor(address _ticketMgmtAddress) {
+        ITicketMgmtInstance = ITicketMgmt(_ticketMgmtAddress);
+    }
+
     // counter for eventId - incremented each time a new event is created;
     uint256 private eventCounter;
     // counter for categoryId - incremented each time a new category is created;
