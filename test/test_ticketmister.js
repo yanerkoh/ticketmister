@@ -1,6 +1,7 @@
 const TicketMgmt = artifacts.require("TicketMgmt");
 const EventMgmt = artifacts.require("EventMgmt");
 const TicketMkt = artifacts.require("TicketMkt");
+const BigNumber = require('bignumber.js');
 
 contract("TicketMister Tests", (accounts) => {
   let ticketMgmtInstance;
@@ -30,7 +31,6 @@ contract("TicketMister Tests", (accounts) => {
 
     // Deploy TicketMkt contract with EventMgmt address
     ticketMktInstance = await TicketMkt.deployed();
-
   });
 
   it("Testing Deployment of Contracts", async () => {
@@ -58,11 +58,17 @@ contract("TicketMister Tests", (accounts) => {
 
     const eventDescription = "This is a test event.";
 
+    const eventLocation = "Test Location";
+
+    const eventDate = "12/12/2024";
+
     const maxResalePercentage = 20;
 
     const result = await ticketMktInstance.createEvent(
       eventName,
       eventDescription,
+      eventLocation,
+      eventDate,
       maxResalePercentage,
       { from: owner }
     );
@@ -81,6 +87,10 @@ contract("TicketMister Tests", (accounts) => {
 
     const emittedEventDescription = eventCreated.args.eventDescription;
 
+    const emittedEventLocation = eventCreated.args.eventLocation;
+
+    const emittedEventDate = eventCreated.args.eventDate;
+
     const emittedMaxResalePercentage =
       eventCreated.args.maxResalePercentage.toNumber();
 
@@ -90,6 +100,18 @@ contract("TicketMister Tests", (accounts) => {
       emittedEventDescription,
       eventDescription,
       "Event description does not match"
+    );
+
+    assert.equal(
+        emittedEventLocation,
+        eventLocation,
+        "Event location does not match"
+    );
+
+      assert.equal(
+        emittedEventDate,
+        eventDate,
+        "Event date does not match"
     );
 
     assert.equal(
@@ -120,10 +142,44 @@ contract("TicketMister Tests", (accounts) => {
     );
 
     const createCategory = createCategoryResult.logs.find(
-      (log) => log.event === "CategoryCreated"
+      (log) => log.event === "TicketCategoryCreated"
     );
 
     assert.exists(createCategory, "createTicketCategory result is undefined");
+
+    const emittedCategoryId = createCategory.args.categoryId;
+
+    const emittedCategoryName = createCategory.args.categoryName;
+
+    const emittedCategoryDescription = createCategory.args.categoryDescription;
+
+    const emittedTicketPrice = createCategory.args.ticketPrice;
+
+    const emittedNumberOfTickets = createCategory.args.numberOfTickets;
+
+    assert.equal(
+      emittedCategoryName,
+      categoryName,
+      "Category name does not match"
+    );
+
+    assert.equal(
+      emittedCategoryDescription,
+      categoryDescription,
+      "Category description does not match"
+    );
+
+    assert.equal(
+      emittedTicketPrice,
+      ticketPrice,
+      "Ticket Price does not match"
+    );
+
+    assert.equal(
+      emittedNumberOfTickets,
+      numberOfTickets,
+      "Number of tickets does not match"
+    );
   });
 
   it("Test Updating of Event Description", async () => {
@@ -141,6 +197,42 @@ contract("TicketMister Tests", (accounts) => {
       getDescription,
       newDescription,
       "Event description not updated correctly"
+    );
+  });
+
+  it("Test Updating of Event Location", async () => {
+    const newLocation = "New event location";
+
+    await ticketMktInstance.updateEventLocation(1, newLocation, {
+      from: owner,
+    });
+
+    const eventInfo = await ticketMktInstance.getEventInfo(1);
+
+    const getLocation = eventInfo.eventLocation;
+
+    assert.equal(
+      getLocation,
+      newLocation,
+      "Event location not updated correctly"
+    );
+  });
+
+  it("Test Updating of Event Date", async () => {
+    const newDate = "New event date";
+
+    await ticketMktInstance.updateEventDate(1, newDate, {
+      from: owner,
+    });
+
+    const eventInfo = await ticketMktInstance.getEventInfo(1);
+
+    const getDate = eventInfo.eventDate;
+
+    assert.equal(
+      getDate,
+      newDate,
+      "Event date not updated correctly"
     );
   });
 
@@ -162,17 +254,7 @@ contract("TicketMister Tests", (accounts) => {
     );
   });
 
-  it("Test Cancellation of Event and Refund", async () => {
-
-  });
-
-  /*it("Test Buying of Tickets", async () => {
-
-  });
-*/
-
-
-  it("#7 Test Buy Tickets - For Ticket Buyers", async () => {
+  it("Test Buy Tickets - For Ticket Buyers", async () => {
 
     const ticketPrice = web3.utils.toWei("1", "ether");
     const payableValue = ticketPrice
@@ -198,11 +280,98 @@ contract("TicketMister Tests", (accounts) => {
 
   });
 
+  it("Test Cancellation of Event and Refund", async () => {
+    const eventName = "Test Event 2";
 
+    const eventDescription = "This is a test event to test the cancellation and refund.";
 
-  it("#8 Test List Tickets for Resale - For Resellers", async () => {
+    const eventLocation = "Test Location for cancellation";
+
+    const eventDate = "12/12/2024";
+    
+    const maxResalePercentage = 20;
+
+    const result = await ticketMktInstance.createEvent(
+      eventName,
+      eventDescription,
+      eventLocation,
+      eventDate,
+      maxResalePercentage,
+      { from: owner }
+    );
+
+    const categoryName = "Test Cat 2";
+
+    const eventId = 2;
+
+    const categoryDescription = "This is a test category to test the cancellation and refund.";
+
+    const ticketPrice = web3.utils.toWei("1", "ether");
+
+    const numberOfTickets = 10;
+
+    const createCategoryResult = await ticketMktInstance.createTicketCategory(
+      eventId,
+      categoryName,
+      categoryDescription,
+      ticketPrice,
+      numberOfTickets,
+      { from: owner }
+    );
+
+    await ticketMktInstance.buyTicket(12, { from: user1, value: ticketPrice });
+
+    await ticketMktInstance.buyTicket(13, { from: user2, value: ticketPrice });
+
+    const refundAmount = await ticketMktInstance.getRefundAmount(eventId);
+
+    const ticketOwner1 = await ticketMktInstance.getTicketOwner(12);
+
+    const ticketOwner2 = await ticketMktInstance.getTicketOwner(13);
+
+    const originalBalance1 = await web3.eth.getBalance(ticketOwner1);
+
+    const originalBalance2 = await web3.eth.getBalance(ticketOwner2);
+
+    const expectedRefund1 = await ticketMktInstance.getOriginalTicketPrice(1);
+
+    const expectedRefund2 = await ticketMktInstance.getOriginalTicketPrice(2);
+
+    await ticketMktInstance.cancelEventAndRefund(eventId, {
+      from: owner,
+      value: refundAmount,
+    });
+
+    const newBalance1 = await web3.eth.getBalance(ticketOwner1);
+
+    const newBalance2 = await web3.eth.getBalance(ticketOwner2);
+
+    const ticketRefund1 = newBalance1 - originalBalance1;
+
+    const ticketRefund2 = newBalance2 - originalBalance2;
+
+    assert(
+      ticketRefund1.toString() === expectedRefund1.toString(),
+      "Ticket owner 1 was not refunded correctly"
+    );
+
+    assert(
+      ticketRefund2.toString() === expectedRefund2.toString(),
+      "Ticket owner 2 was not refunded correctly"
+    );
+
+    const event = await ticketMktInstance.getEventInfo(eventId);
+
+    assert.isFalse(
+      event.isActive,
+      "Event should be inactive after cancellation"
+    );
+  });
+
+  it("Test List Tickets for Resale - For Resellers", async () => {
     const resalePrice = web3.utils.toWei("1", "ether");
-    const ticketId = 1;  // Replace with a ticket that user1 owns
+    const ticketId = 1;
+    const ticketIdBN = new BigNumber(ticketId); // Replace with a ticket that user1 owns
 
     //User1 lists the ticket for resale
     await ticketMktInstance.listTicketForResale(ticketId, resalePrice, { from: user1 });
@@ -211,13 +380,14 @@ contract("TicketMister Tests", (accounts) => {
     // Check if the ticket is in the ticketsOnSale list for its event
     const eventId = 1; // Get the event ID from the ticket info
     const ticketsOnSale = await ticketMktInstance.getTicketsOnSale(eventId);
-    assert.isTrue(ticketsOnSale.includes(ticketId), "Ticket should be listed in the tickets on sale for its event");
+    const ticketIdsOnSale = ticketsOnSale.map(ticketBN => ticketBN.toNumber());
+    assert.isTrue(ticketIdsOnSale.includes(ticketIdBN.toNumber()), "Ticket should be listed in the tickets on sale for its event");
   });
 
-  it("#10 Test Unlist Ticket from Resale - For Resellers", async () => {
+  it("Test Unlist Ticket from Resale - For Resellers", async () => {
     const resalePrice = web3.utils.toWei("1", "ether");
     const ticketId = 1;  
-
+    const ticketIdBN = new BigNumber(ticketId);
 
     //User1 unlists the ticket from resale
     await ticketMktInstance.unlistTicketFromResale(ticketId, { from: user1 });
@@ -225,11 +395,12 @@ contract("TicketMister Tests", (accounts) => {
     // Check if the ticket is removed from ticketsOnSale list for its event
     const eventId = 1; // Get the event ID from the ticket info
     const ticketsOnSale = await ticketMktInstance.getTicketsOnSale(eventId);
-    assert.isFalse(ticketsOnSale.includes(ticketId), "Ticket should not be listed in the tickets on sale for its event");
+    const ticketIdsOnSale = ticketsOnSale.map(ticketBN => ticketBN.toNumber());
+    assert.isFalse(ticketIdsOnSale.includes(ticketIdBN.toNumber()), "Ticket should not be listed in the tickets on sale for its event");
   });
 
 
-  it("#9 Test Gift Ticket - For Resellers", async () => {
+  it("Test Gift Ticket - For Resellers", async () => {
     const ticketPrice = web3.utils.toWei("1", "ether");
     const payableValue = ticketPrice
     const ticketId = 2;
@@ -249,9 +420,4 @@ contract("TicketMister Tests", (accounts) => {
     const ownerOfTicket = await ticketMgmtInstance.getTicketOwner(ticketId);
     assert.equal(ownerOfTicket, user2, "The ticket owner should be user2 after gifting");
   });
-
-
-
-
-
 });

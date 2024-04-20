@@ -22,3 +22,4 @@ contract RewardToken is ERC20, Ownable {
         return _balances[account];
     }
 }
+
