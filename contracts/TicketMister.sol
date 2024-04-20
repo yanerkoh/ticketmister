@@ -15,8 +15,6 @@ import "./RewardToken.sol";
 contract TicketMister is ERC721URIStorage, Ownable {
     RewardToken public rewardToken;
 
-    constructor() ERC721("TicketMister", "TMT") {}
-
     constructor(address _rewardTokenAddress) ERC721("TicketMister", "TMT") {
         rewardToken = RewardToken(_rewardTokenAddress); // Initialize the RewardToken contract instance
     }
