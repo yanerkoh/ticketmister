@@ -47,6 +47,8 @@ contract TicketMkt {
         address refundRecipient,
         uint256 refundAmount
     );
+    event EventDescriptionUpdated(uint256 eventId, string newDescription);
+    event MaxResalePercentageUpdated(uint256 eventId, uint256 newMaxPercentage);
 
     /**
         Main Functions For Event Organisers
@@ -93,6 +95,15 @@ contract TicketMkt {
             ticketsOwned[msg.sender].push(tickets[i]);
             ticketsOnSale[eventId].push(tickets[i]);
         }
+
+        emit CategoryCreated(
+        categoryId,
+        eventId,
+        categoryName,
+        categoryDescription,
+        ticketPrice,
+        numberOfTickets
+    );
         
     }
 
@@ -101,6 +112,7 @@ contract TicketMkt {
         string memory newDescription
     ) public onlyEventOrganiser(eventId) {
         IEventMgmtInstance.updateEventDescription(eventId, newDescription);
+        emit EventDescriptionUpdated(eventId, newDescription);
     }
 
     function updateMaxResalePercentage(
@@ -108,6 +120,7 @@ contract TicketMkt {
         uint256 newMaxPercentage
     ) public onlyEventOrganiser(eventId) {
         IEventMgmtInstance.updateMaxResalePercentage(eventId, newMaxPercentage);
+        emit MaxResalePercentageUpdated(eventId, newMaxPercentage);
     }
 
     function getRefundAmount(
