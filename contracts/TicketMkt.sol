@@ -23,15 +23,19 @@ contract TicketMkt {
     // eventId mapped to array of ticketIds of all tickets on sale (whether first sale or resale)
     mapping(uint256 => uint256[]) private ticketsOnSale;
 
+    mapping(address => uint256) private rewardPoints;
+
     event EventCreated(
         uint256 eventId,
         string eventName,
         address eventOrganiser,
         string eventDescription,
+        string eventLocation,
+        string eventDate,
         uint256 maxResalePercentage
     );
 
-    event CategoryCreated(
+    event TicketCategoryCreated(
         uint256 categoryId,
         uint256 eventId,
         string categoryName,
@@ -42,12 +46,16 @@ contract TicketMkt {
 
     event ticketBought(uint256 ticketId, address buyer, address seller);
     event ticketGifted(uint256 ticketId, address recipient);
+    event RewardEarned(address indexed recipient, uint256 amount);
+
     event ticketRefunded(
         uint256 ticketId,
         address refundRecipient,
         uint256 refundAmount
     );
     event EventDescriptionUpdated(uint256 eventId, string newDescription);
+    event EventLocationUpdated(uint256 eventId, string newLocation);
+    event EventDateUpdated(uint256 eventId, string newDate);
     event MaxResalePercentageUpdated(uint256 eventId, uint256 newMaxPercentage);
 
     /**
@@ -56,11 +64,15 @@ contract TicketMkt {
     function createEvent(
         string memory eventName,
         string memory eventDescription,
+        string memory eventLocation,
+        string memory eventDate,
         uint256 maxResalePercentage
     ) public returns (uint256 eventId) {
         eventId = IEventMgmtInstance.createEvent(
             eventName,
             eventDescription,
+            eventLocation,
+            eventDate,
             maxResalePercentage
         );
         eventsOrganised[msg.sender].push(eventId);
@@ -70,6 +82,8 @@ contract TicketMkt {
             eventName,
             tx.origin,
             eventDescription,
+            eventLocation,
+            eventDate,
             maxResalePercentage
         );
     }
@@ -96,7 +110,7 @@ contract TicketMkt {
             ticketsOnSale[eventId].push(tickets[i]);
         }
 
-        emit CategoryCreated(
+        emit TicketCategoryCreated(
         categoryId,
         eventId,
         categoryName,
@@ -113,6 +127,22 @@ contract TicketMkt {
     ) public onlyEventOrganiser(eventId) {
         IEventMgmtInstance.updateEventDescription(eventId, newDescription);
         emit EventDescriptionUpdated(eventId, newDescription);
+    }
+
+    function updateEventLocation(
+        uint256 eventId,
+        string memory newLocation
+    ) public onlyEventOrganiser(eventId) {
+        IEventMgmtInstance.updateEventLocation(eventId, newLocation);
+        emit EventLocationUpdated(eventId, newLocation);
+    }
+
+    function updateEventDate(
+        uint256 eventId,
+        string memory newDate
+    ) public onlyEventOrganiser(eventId) {
+        IEventMgmtInstance.updateEventDate(eventId, newDate);
+        emit EventDateUpdated(eventId, newDate);
     }
 
     function updateMaxResalePercentage(
@@ -205,20 +235,33 @@ contract TicketMkt {
         );
 
         uint256 ticketPrice = IEventMgmtInstance.getTicketPrice(ticketId);
+
+        // Redemption logic
+        uint256 discount = 0;
+        if (rewardPoints[msg.sender] == 1000) {
+            discount = 10 * (rewardPoints[msg.sender] / 1000); // Calculate discount
+            rewardPoints[msg.sender] = rewardPoints[msg.sender] % 1000; // Deduct reward points
+        }
+        uint256 payableValue = ticketPrice - discount;
+
         require(
-            msg.value == ticketPrice,
+            msg.value == payableValue,
             "You must pay the exact amount that this is listed for!"
         );
 
         address currentOwner = IEventMgmtInstance.getTicketOwner(ticketId);
         require(msg.sender != currentOwner, "You already own this ticket!");
 
+        // Calculate rewards earned
+        uint256 rewardsEarned = (payableValue * 10) / 100; // 10% of ticket price as rewards
+        rewardPoints[msg.sender] += rewardsEarned;
+
         // transfer to new owner
         IEventMgmtInstance.transferTicket(ticketId, msg.sender);
 
         // pay current owner
         address payable ownerPayable = payable(currentOwner);
-        ownerPayable.transfer(msg.value);
+        ownerPayable.transfer(payableValue);
 
         // update mappings
         for (
@@ -252,6 +295,13 @@ contract TicketMkt {
             }
         }
         emit ticketBought(ticketId, msg.sender, currentOwner);
+        emit RewardEarned(msg.sender, rewardsEarned);
+    }
+
+    function checkRewardPointsBalance(
+        address account
+    ) public view returns (uint256) {
+        return rewardPoints[account];
     }
 
     /**
@@ -361,6 +411,8 @@ contract TicketMkt {
             string memory eventName,
             address eventOrganiser,
             string memory eventDescription,
+            string memory eventLocation,
+            string memory eventDate,
             uint256 maxResalePercentage,
             bool isActive,
             uint256[] memory categoryIds
@@ -427,6 +479,14 @@ contract TicketMkt {
 
     function getTicketsOnSale(uint256 eventId) public view returns (uint256[] memory ticketIds) {
         return ticketsOnSale[eventId];
+    }
+
+    function getTicketOwner(uint256 ticketId) public view returns (address) {
+        return IEventMgmtInstance.getTicketOwner(ticketId);
+    }
+
+    function getOriginalTicketPrice(uint256 ticketId) public view returns (uint256) {
+        return IEventMgmtInstance.getOriginalTicketPrice(ticketId);
     }
 
     /**
