@@ -173,6 +173,7 @@ contract("TicketMister Tests", (accounts) => {
   });
 */
 
+
   it("#7 Test Buy Tickets - For Ticket Buyers", async () => {
     const ticketPrice = web3.utils.toWei("1", "ether");
     const eventId = 1;  // Replace eventId with a created event id
