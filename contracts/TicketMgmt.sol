@@ -82,26 +82,32 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
     }
 
     function getEventId(uint256 ticketId) public view override returns (uint256) {
+        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
         return tickets[ticketId].eventId;
     }
 
     function getTicketOwner(uint256 ticketId) public view override returns (address) {
+        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
         return tickets[ticketId].owner;
     }
 
     function isForSale(uint256 ticketId) public view override returns (bool) {
+        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
         return tickets[ticketId].isOnSale;
     }
 
     function getOriginalTicketPrice(uint256 ticketId) public view override returns (uint256) {
+        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
         return tickets[ticketId].originalPrice;
     }
 
     function getResaleTicketPrice(uint256 ticketId) public view override returns (uint256) {
+        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
         return tickets[ticketId].resalePrice;
     }
 
     function transferTicket(uint256 ticketId, address newOwner) public override {
+        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
         address currentOwner = tickets[ticketId].owner;
         _transfer(currentOwner, newOwner, ticketId);
         tickets[ticketId].owner = newOwner;
