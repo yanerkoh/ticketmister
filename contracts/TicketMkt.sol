@@ -7,13 +7,18 @@ import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./EventMgmt.sol";
 import "./TicketMgmt.sol";
 
+//import "./RewardToken.sol";
+
 contract TicketMkt {
     using SafeMath for uint256;
 
     IEventMgmt private IEventMgmtInstance;
 
+    //RewardToken private rewardToken;
+
     constructor(address _eventMgmtAddress) {
         IEventMgmtInstance = IEventMgmt(_eventMgmtAddress);
+        //rewardToken = RewardToken(_rewardTokenAddress);
     }
 
     // address of event organiser mapped to an array of eventIds
@@ -22,6 +27,8 @@ contract TicketMkt {
     mapping(address => uint256[]) private ticketsOwned;
     // eventId mapped to array of ticketIds of all tickets on sale (whether first sale or resale)
     mapping(uint256 => uint256[]) private ticketsOnSale;
+
+    mapping(address => uint256) private rewardPoints;
 
     event EventCreated(
         uint256 eventId,
@@ -42,6 +49,8 @@ contract TicketMkt {
 
     event ticketBought(uint256 ticketId, address buyer, address seller);
     event ticketGifted(uint256 ticketId, address recipient);
+    event RewardEarned(address indexed recipient, uint256 amount);
+
     event ticketRefunded(
         uint256 ticketId,
         address refundRecipient,
@@ -97,14 +106,13 @@ contract TicketMkt {
         }
 
         emit CategoryCreated(
-        categoryId,
-        eventId,
-        categoryName,
-        categoryDescription,
-        ticketPrice,
-        numberOfTickets
-    );
-        
+            categoryId,
+            eventId,
+            categoryName,
+            categoryDescription,
+            ticketPrice,
+            numberOfTickets
+        );
     }
 
     function updateEventDescription(
@@ -205,20 +213,33 @@ contract TicketMkt {
         );
 
         uint256 ticketPrice = IEventMgmtInstance.getTicketPrice(ticketId);
+
+        // Redemption logic
+        uint256 discount = 0;
+        if (rewardPoints[msg.sender] == 1000) {
+            discount = 10 * (rewardPoints[msg.sender] / 1000); // Calculate discount
+            rewardPoints[msg.sender] = rewardPoints[msg.sender] % 1000; // Deduct reward points
+        }
+        uint256 payableValue = ticketPrice - discount;
+
         require(
-            msg.value == ticketPrice,
+            msg.value == payableValue,
             "You must pay the exact amount that this is listed for!"
         );
 
         address currentOwner = IEventMgmtInstance.getTicketOwner(ticketId);
         require(msg.sender != currentOwner, "You already own this ticket!");
 
+        // Calculate rewards earned
+        uint256 rewardsEarned = (payableValue * 10) / 100; // 10% of ticket price as rewards
+        rewardPoints[msg.sender] += rewardsEarned;
+
         // transfer to new owner
         IEventMgmtInstance.transferTicket(ticketId, msg.sender);
 
         // pay current owner
         address payable ownerPayable = payable(currentOwner);
-        ownerPayable.transfer(msg.value);
+        ownerPayable.transfer(payableValue);
 
         // update mappings
         for (
@@ -252,6 +273,13 @@ contract TicketMkt {
             }
         }
         emit ticketBought(ticketId, msg.sender, currentOwner);
+        emit RewardEarned(msg.sender, rewardsEarned);
+    }
+
+    function checkRewardPointsBalance(
+        address account
+    ) public view returns (uint256) {
+        return rewardPoints[account];
     }
 
     /**
@@ -284,10 +312,7 @@ contract TicketMkt {
             IEventMgmtInstance.isForSale(ticketId) == false,
             "This ticket is listed for sale! Unlist it to gift it!"
         );
-        require(
-            recipient != address(0),
-            "Invalid recipient!"
-        );
+        require(recipient != address(0), "Invalid recipient!");
         IEventMgmtInstance.giftTicket(ticketId, recipient);
         emit ticketGifted(ticketId, recipient);
     }
@@ -417,15 +442,25 @@ contract TicketMkt {
     /**
         Getter functions (State variables)
     */
-    function getEventsOrganised() public view returns (uint256[] memory eventIds) {
+    function getEventsOrganised()
+        public
+        view
+        returns (uint256[] memory eventIds)
+    {
         return eventsOrganised[msg.sender];
     }
 
-    function getTicketsOwned() public view returns (uint256[] memory ticketIds) {
+    function getTicketsOwned()
+        public
+        view
+        returns (uint256[] memory ticketIds)
+    {
         return ticketsOwned[msg.sender];
     }
 
-    function getTicketsOnSale(uint256 eventId) public view returns (uint256[] memory ticketIds) {
+    function getTicketsOnSale(
+        uint256 eventId
+    ) public view returns (uint256[] memory ticketIds) {
         return ticketsOnSale[eventId];
     }
 
