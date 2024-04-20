@@ -102,8 +102,8 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         ticketIds = new uint256[](numberOfTickets);
 
         for (uint256 i = 0; i < numberOfTickets; i++) {
-            uint256 ticketId = ticketCounter;
             ticketCounter++;
+            uint256 ticketId = ticketCounter;
             require(
                 !_exists(ticketId),
                 "Ticket token has already been created."
@@ -143,7 +143,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         returns (uint256, uint256, address, bool, uint256, uint256)
     {
         require(
-            (ticketId >= 0) && (ticketId < ticketCounter),
+            (ticketId > 0) && (ticketId <= ticketCounter),
             "Ticket does not exist!"
         );
         TicketInfo memory ticketInfo = tickets[ticketId];
@@ -161,7 +161,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         uint256 ticketId
     ) public view override returns (uint256) {
         require(
-            (ticketId >= 0) && (ticketId < ticketCounter),
+            (ticketId > 0) && (ticketId <= ticketCounter),
             "Ticket does not exist!"
         );
         return tickets[ticketId].eventId;
@@ -171,7 +171,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         uint256 ticketId
     ) public view override returns (address) {
         require(
-            (ticketId >= 0) && (ticketId < ticketCounter),
+            (ticketId > 0) && (ticketId <= ticketCounter),
             "Ticket does not exist!"
         );
         return tickets[ticketId].owner;
@@ -179,7 +179,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
 
     function isForSale(uint256 ticketId) public view override returns (bool) {
         require(
-            (ticketId >= 0) && (ticketId < ticketCounter),
+            (ticketId > 0) && (ticketId <= ticketCounter),
             "Ticket does not exist!"
         );
         return tickets[ticketId].isOnSale;
@@ -189,7 +189,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         uint256 ticketId
     ) public view override returns (uint256) {
         require(
-            (ticketId >= 0) && (ticketId < ticketCounter),
+            (ticketId > 0) && (ticketId <= ticketCounter),
             "Ticket does not exist!"
         );
         return tickets[ticketId].originalPrice;
@@ -199,7 +199,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         uint256 ticketId
     ) public view override returns (uint256) {
         require(
-            (ticketId >= 0) && (ticketId < ticketCounter),
+            (ticketId > 0) && (ticketId <= ticketCounter),
             "Ticket does not exist!"
         );
         return tickets[ticketId].resalePrice;
@@ -210,7 +210,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         address newOwner
     ) public override {
         require(
-            (ticketId >= 0) && (ticketId < ticketCounter),
+            (ticketId > 0) && (ticketId <= ticketCounter),
             "Ticket does not exist!"
         );
         address currentOwner = tickets[ticketId].owner;
@@ -225,7 +225,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         uint256 resalePrice
     ) public override {
         require(
-            (ticketId >= 0) && (ticketId < ticketCounter),
+            (ticketId > 0) && (ticketId <= ticketCounter),
             "Ticket does not exist!"
         );
         tickets[ticketId].isOnSale = true;
@@ -235,7 +235,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
 
     function unlistTicketFromResale(uint256 ticketId) public override {
         require(
-            (ticketId >= 0) && (ticketId < ticketCounter),
+            (ticketId > 0) && (ticketId <= ticketCounter),
             "Ticket does not exist!"
         );
         tickets[ticketId].isOnSale = false;

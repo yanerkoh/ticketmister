@@ -179,8 +179,8 @@ contract EventMgmt is IEventMgmt {
         string memory eventDescription,
         uint256 maxResalePercentage
     ) public override returns (uint256 eventId) {
-        eventId = eventCounter;
         eventCounter++;
+        eventId = eventCounter;
         EventInfo memory newEvent = EventInfo({
             eventId: eventId,
             eventName: eventName,
@@ -209,8 +209,8 @@ contract EventMgmt is IEventMgmt {
         uint256 ticketPrice,
         uint256 numberOfTickets
     ) public override returns (uint256 categoryId) {
-        categoryId = categoryCounter;
         categoryCounter++;
+        categoryId = categoryCounter;
         CategoryInfo memory newCategory = CategoryInfo({
             eventId: eventId,
             categoryId: categoryId,
@@ -247,7 +247,7 @@ contract EventMgmt is IEventMgmt {
         string memory newDescription
     ) external override {
         require(
-            (eventId >= 0) && (eventId < eventCounter),
+            (eventId > 0) && (eventId <= eventCounter),
             "Event does not exist!"
         );
         events[eventId].eventDescription = newDescription;
@@ -259,7 +259,7 @@ contract EventMgmt is IEventMgmt {
         uint256 newMaxResalePercentage
     ) external override {
         require(
-            (eventId >= 0) && (eventId < eventCounter),
+            (eventId > 0) && (eventId <= eventCounter),
             "Event does not exist!"
         );
         events[eventId].maxResalePercentage = newMaxResalePercentage;
@@ -268,7 +268,7 @@ contract EventMgmt is IEventMgmt {
 
     function cancelEvent(uint256 eventId) external override {
         require(
-            (eventId >= 0) && (eventId < eventCounter),
+            (eventId > 0) && (eventId <= eventCounter),
             "Event does not exist!"
         );
         require(events[eventId].isActive, "Event is not active!");
@@ -296,7 +296,7 @@ contract EventMgmt is IEventMgmt {
         )
     {
         require(
-            (eventId >= 0) && (eventId < eventCounter),
+            (eventId > 0) && (eventId <= eventCounter),
             "Event does not exist!"
         );
         EventInfo memory eventInfo = events[eventId];
@@ -325,7 +325,7 @@ contract EventMgmt is IEventMgmt {
         )
     {
         require(
-            (categoryId >= 0) && (categoryId < categoryCounter),
+            (categoryId > 0) && (categoryId <= categoryCounter),
             "Category does not exist!"
         );
         CategoryInfo memory categoryInfo = categories[categoryId];
@@ -353,7 +353,7 @@ contract EventMgmt is IEventMgmt {
         uint256 eventId
     ) public view override returns (uint256[] memory) {
         require(
-            (eventId >= 0) && (eventId < eventCounter),
+            (eventId > 0) && (eventId <= eventCounter),
             "Event does not exist!"
         );
         uint256[] memory eventTickets = events[eventId].ticketIds;
@@ -364,7 +364,7 @@ contract EventMgmt is IEventMgmt {
         uint256 categoryId
     ) public view override returns (uint256[] memory) {
         require(
-            (categoryId >= 0) && (categoryId < categoryCounter),
+            (categoryId > 0) && (categoryId <= categoryCounter),
             "Category does not exist!"
         );
         uint256[] memory categoryTickets = categories[categoryId].ticketIds;
@@ -376,7 +376,7 @@ contract EventMgmt is IEventMgmt {
         address user
     ) public view override returns (bool) {
         require(
-            (eventId >= 0) && (eventId < eventCounter),
+            (eventId > 0) && (eventId <= eventCounter),
             "Event does not exist!"
         );
         return events[eventId].eventOrganiser == user;
