@@ -91,10 +91,7 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         uint256 resalePrice
     );
     event TicketUnlistedFromResale(uint256 ticketId, address owner);
-    event TicketCancelled(
-        uint256 ticketId,
-        address owner
-    );
+    event TicketCancelled(uint256 ticketId);
 
     function createTickets(
         uint256 eventId,
@@ -131,10 +128,10 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         return ticketIds;
     }
 
-    function cancelTicket(uint256 ticketId) external payable override {
+    function cancelTicket(uint256 ticketId) external override {
         _burn(ticketId);
         delete tickets[ticketId];
-        emit TicketCancelled(ticketId, ticketOwner);
+        emit TicketCancelled(ticketId);
     }
 
     function getTicketInfo(
