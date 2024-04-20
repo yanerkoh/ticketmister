@@ -130,7 +130,9 @@ contract TicketMkt {
             resalePrice <= IEventMgmtInstance.calculateMaxResalePrice(ticketId),
             "Resale price cannot be higher than the maximum resale price!"
         );
+
         IEventMgmtInstance.listTicketForResale(ticketId, resalePrice);
+        ticketsOnSale[IEventMgmtInstance.getEventId(ticketId)].push(ticketId);
     }
 
     function unlistTicketFromResale(uint256 ticketId) public {
@@ -142,7 +144,21 @@ contract TicketMkt {
             IEventMgmtInstance.isForSale(ticketId) == true,
             "This ticket is not listed for sale!"
         );
-        IEventMgmtInstance.unlistTicketForResale(ticketId);
+
+        IEventMgmtInstance.unlistTicketFromResale(ticketId);
+        uint256 eventId = IEventMgmtInstance.getEventId(ticketId);
+        for (
+            // iterate through ticketsForSale for event
+            uint256 index = 0;
+            index < ticketsOnSale[eventId].length;
+            index++
+        ) {
+            // find the ticketId in the array
+            if (ticketsOnSale[eventId][index] == ticketId) {
+                removeTicketFromTicketsOnSale(eventId, index);
+                break;
+            }
+        }
     }
 
     function removeTicketFromTicketsOwned(address owner, uint256 index)

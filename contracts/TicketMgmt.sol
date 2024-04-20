@@ -47,8 +47,8 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
 
     event TicketsCreated(uint256 eventId, uint256 categoryId, uint256 numberOfTickets, address owner);
     event TicketTransferred(uint256 ticketId, address previousOwner, address newOwner);
-    event TicketListForResale(uint256 ticketId, address owner, uint256 resalePrice);
-    event TicketUnListedFromResale(uint256 ticketId, address owner);
+    event TicketListedForResale(uint256 ticketId, address owner, uint256 resalePrice);
+    event TicketUnlistedFromResale(uint256 ticketId, address owner);
 
     function createTickets(
         uint256 eventId,
