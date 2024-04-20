@@ -29,6 +29,7 @@ interface IEventMgmt {
     ) external;
 
     function cancelEvent(uint256 eventId) external;
+    function cancelTicket(uint256 ticketId) external;
 
     function getEventInfo(
         uint256 eventId
@@ -91,6 +92,10 @@ interface IEventMgmt {
     function isForSale(uint256 ticketId) external view returns (bool);
 
     function getTicketPrice(uint256 ticketId) external view returns (uint256);
+
+    function getOriginalTicketPrice(
+        uint256 ticketId
+    ) external view returns (uint256);
 
     function transferTicket(uint256 ticketId, address newOwner) external;
 
@@ -271,6 +276,10 @@ contract EventMgmt is IEventMgmt {
         emit EventCancelled(eventId);
     }
 
+    function cancelTicket(uint256 ticketId) external override {
+        ITicketMgmtInstance.cancelTicket(ticketId);
+    }
+
     function getEventInfo(
         uint256 eventId
     )
@@ -381,12 +390,18 @@ contract EventMgmt is IEventMgmt {
 
     function getTicketPrice(
         uint256 ticketId
-    ) public view override returns (uint256) {
+    ) public view override returns (uint256 currentSalePrice) {
         if (ITicketMgmtInstance.getResaleTicketPrice(ticketId) != 0) {
             return ITicketMgmtInstance.getResaleTicketPrice(ticketId);
         } else {
             return ITicketMgmtInstance.getOriginalTicketPrice(ticketId);
         }
+    }
+
+    function getOriginalTicketPrice(
+        uint256 ticketId
+    ) public view override returns (uint256 originalTicketPrice) {
+        return ITicketMgmtInstance.getOriginalTicketPrice(ticketId);
     }
 
     function isForSale(uint256 ticketId) public view override returns (bool) {
