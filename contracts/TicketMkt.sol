@@ -214,13 +214,16 @@ contract TicketMkt {
 
         uint256 ticketPrice = IEventMgmtInstance.getTicketPrice(ticketId);
 
-        // Redemption logic
-        uint256 discount = 0;
-        if (rewardPoints[msg.sender] == 1000) {
-            discount = 10 * (rewardPoints[msg.sender] / 1000); // Calculate discount
-            rewardPoints[msg.sender] = rewardPoints[msg.sender] % 1000; // Deduct reward points
-        }
+        // Calculate discount based on reward points
+        uint256 maxDiscountPercent = 20; // Maximum discount is 20%
+        uint256 discountPer100Points = 2; // Each 100 points gives a 2% discount
+        uint256 pointsForMaxDiscount = maxDiscountPercent / discountPer100Points * 100; // Calculate points needed for maximum discount
+
+        uint256 discount = (rewardPoints[msg.sender] >= pointsForMaxDiscount) ? (ticketPrice * maxDiscountPercent / 100) :
+                        (ticketPrice * rewardPoints[msg.sender] / 100 / discountPer100Points);
+
         uint256 payableValue = ticketPrice - discount;
+
 
         require(
             msg.value == payableValue,
@@ -281,6 +284,25 @@ contract TicketMkt {
     ) public view returns (uint256) {
         return rewardPoints[account];
     }
+
+    function checkDiscountedPrice(uint256 ticketId) public view returns (uint256 originalPrice, uint256 discountedPrice) {
+        require(IEventMgmtInstance.isForSale(ticketId), "This ticket is not for sale!");
+
+        originalPrice = IEventMgmtInstance.getTicketPrice(ticketId);
+
+        // Calculate discount based on reward points
+        uint256 maxDiscountPercent = 20; // Maximum discount is 20%
+        uint256 discountPer100Points = 2; // Each 100 points gives a 2% discount
+        uint256 pointsForMaxDiscount = maxDiscountPercent / discountPer100Points * 100; // Calculate points needed for maximum discount
+
+        uint256 discount = (rewardPoints[msg.sender] >= pointsForMaxDiscount) ? (originalPrice * maxDiscountPercent / 100) :
+                        (originalPrice * rewardPoints[msg.sender] / 100 / discountPer100Points);
+
+        discountedPrice = originalPrice - discount;
+
+        return (originalPrice, discountedPrice);
+    }
+
 
     /**
         Main Functions For Resellers
