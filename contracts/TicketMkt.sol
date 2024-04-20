@@ -24,6 +24,7 @@ contract TicketMkt {
     mapping(uint256 => uint256[]) private ticketsOnSale;
 
     event ticketBought(uint256 ticketId, address buyer, address seller);
+    event ticketGifted(uint256 ticketId, address recipient);
     event ticketRefunded(
         uint256 ticketId,
         address refundRecipient,
@@ -233,6 +234,23 @@ contract TicketMkt {
 
         IEventMgmtInstance.listTicketForResale(ticketId, resalePrice);
         ticketsOnSale[IEventMgmtInstance.getEventId(ticketId)].push(ticketId);
+    }
+
+    function giftTicket(uint256 ticketId, address recipient) public {
+        require(
+            IEventMgmtInstance.getTicketOwner(ticketId) == msg.sender,
+            "You do not own this ticket!"
+        );
+        require(
+            IEventMgmtInstance.isForSale(ticketId) == false,
+            "This ticket is listed for sale! Unlist it to gift it!"
+        );
+        require(
+            recipient != address(0),
+            "Invalid recipient!"
+        );
+        IEventMgmtInstance.giftTicket(ticketId, recipient);
+        emit ticketGifted(ticketId, recipient);
     }
 
     function unlistTicketFromResale(uint256 ticketId) public {

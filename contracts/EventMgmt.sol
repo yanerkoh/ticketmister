@@ -108,6 +108,11 @@ interface IEventMgmt {
         uint256 resalePrice
     ) external;
 
+    function giftTicket(
+        uint256 ticketId,
+        address recipient
+    ) external;
+
     function unlistTicketFromResale(uint256 ticketId) external;
 }
 
@@ -432,6 +437,13 @@ contract EventMgmt is IEventMgmt {
         uint256 resalePrice
     ) public override {
         ITicketMgmtInstance.listTicketForResale(ticketId, resalePrice);
+    }
+
+    function giftTicket(
+        uint256 ticketId,
+        address recipient
+    ) public override {
+        ITicketMgmtInstance.transferTicket(ticketId, recipient);
     }
 
     function unlistTicketFromResale(uint256 ticketId) public override {
