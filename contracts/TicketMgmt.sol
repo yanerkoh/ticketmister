@@ -241,4 +241,5 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         tickets[ticketId].isOnSale = false;
         emit TicketUnlistedFromResale(ticketId, tx.origin);
     }
+    
 }
