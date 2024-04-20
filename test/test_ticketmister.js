@@ -64,7 +64,7 @@ contract("TicketMister Tests", (accounts) => {
       eventName,
       eventDescription,
       maxResalePercentage,
-      { from: accounts[1] }
+      { from: owner }
     );
 
     const eventCreated = result.logs.find(
@@ -108,7 +108,7 @@ contract("TicketMister Tests", (accounts) => {
 
     const ticketPrice = web3.utils.toWei("1", "ether");
 
-    const numberOfTickets = 100;
+    const numberOfTickets = 10;
 
     const createCategoryResult = await ticketMktInstance.createTicketCategory(
       eventId,
@@ -116,13 +116,11 @@ contract("TicketMister Tests", (accounts) => {
       categoryDescription,
       ticketPrice,
       numberOfTickets,
-      { from: accounts[1] }
+      { from: owner }
     );
 
-    console.log("test " + createCategoryResult);
-
     const createCategory = createCategoryResult.logs.find(
-      (log) => log.event === "createCategory"
+      (log) => log.event === "CategoryCreated"
     );
 
     assert.exists(createCategory, "createTicketCategory result is undefined");
@@ -132,7 +130,7 @@ contract("TicketMister Tests", (accounts) => {
     const newDescription = "New event description";
 
     await ticketMktInstance.updateEventDescription(1, newDescription, {
-      from: accounts[1],
+      from: owner,
     });
 
     const eventInfo = await ticketMktInstance.getEventInfo(1);
@@ -150,7 +148,7 @@ contract("TicketMister Tests", (accounts) => {
     const newMaxPercentage = 30;
 
     await ticketMktInstance.updateMaxResalePercentage(1, newMaxPercentage, {
-      from: accounts[1],
+      from: owner,
     });
 
     const eventInfo = await ticketMktInstance.getEventInfo(1);
