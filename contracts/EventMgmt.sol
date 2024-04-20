@@ -45,6 +45,20 @@ interface IEventMgmt {
             uint256[] memory ticketIds
         );
 
+    function getTicketInfo(
+        uint256 ticketId
+    )
+        external
+        view
+        returns (
+            uint256 eventId,
+            uint256 categoryId,
+            address owner,
+            bool isOnSale,
+            uint256 originalPrice,
+            uint256 resalePrice
+        );
+
     function getEventTickets(
         uint256 eventId
     ) external view returns (uint256[] memory tickets);
@@ -59,18 +73,24 @@ interface IEventMgmt {
     ) external view returns (bool);
 
     function getEventId(uint256 ticketId) external view returns (uint256);
+
     function getTicketOwner(uint256 ticketId) external view returns (address);
+
     function isForSale(uint256 ticketId) external view returns (bool);
+
     function getTicketPrice(uint256 ticketId) external view returns (uint256);
 
     function transferTicket(uint256 ticketId, address newOwner) external;
+
     function calculateMaxResalePrice(
         uint256 ticketId
     ) external view returns (uint256);
+
     function listTicketForResale(
         uint256 ticketId,
         uint256 resalePrice
     ) external;
+
     function unlistTicketFromResale(uint256 ticketId) external;
 }
 
@@ -252,6 +272,17 @@ contract EventMgmt is IEventMgmt {
             categoryInfo.ticketPrice,
             categoryInfo.ticketIds
         );
+    }
+
+    function getTicketInfo(
+        uint256 ticketId
+    )
+        public
+        view
+        override
+        returns (uint256, uint256, address, bool, uint256, uint256)
+    {
+        return ITicketMgmtInstance.getTicketInfo(ticketId);
     }
 
     function getEventTickets(

@@ -237,6 +237,23 @@ contract TicketMkt {
         return IEventMgmtInstance.getCategoryInfo(categoryId);
     }
 
+    function getTicketInfo(
+        uint256 ticketId
+    )
+        public
+        view
+        returns (
+            uint256 eventId,
+            uint256 categoryId,
+            address owner,
+            bool isOnSale,
+            uint256 originalPrice,
+            uint256 resalePrice
+        )
+    {
+        return IEventMgmtInstance.getTicketInfo(ticketId);
+    }
+
     function getEventTickets(
         uint256 eventId
     ) public view returns (uint256[] memory eventTickets) {

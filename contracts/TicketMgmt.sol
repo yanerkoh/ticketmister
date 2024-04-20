@@ -15,21 +15,41 @@ interface ITicketMgmt {
         uint256 numberOfTickets
     ) external returns (uint256[] memory ticketIds);
 
+    function getTicketInfo(
+        uint256 ticketId
+    )
+        external
+        view
+        returns (
+            uint256 eventId,
+            uint256 categoryId,
+            address owner,
+            bool isOnSale,
+            uint256 originalPrice,
+            uint256 resalePrice
+        );
+
     function getEventId(uint256 ticketId) external view returns (uint256);
+
     function getTicketOwner(uint256 ticketId) external view returns (address);
+
     function isForSale(uint256 ticketId) external view returns (bool);
+
     function getOriginalTicketPrice(
         uint256 ticketId
     ) external view returns (uint256);
+
     function getResaleTicketPrice(
         uint256 ticketId
     ) external view returns (uint256);
 
     function transferTicket(uint256 ticketId, address newOwner) external;
+
     function listTicketForResale(
         uint256 ticketId,
         uint256 resalePrice
     ) external;
+
     function unlistTicketFromResale(uint256 ticketId) external;
 }
 
@@ -103,6 +123,29 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
 
         emit TicketsCreated(eventId, categoryId, numberOfTickets, tx.origin);
         return ticketIds;
+    }
+
+    function getTicketInfo(
+        uint256 ticketId
+    )
+        public
+        view
+        override
+        returns (uint256, uint256, address, bool, uint256, uint256)
+    {
+        require(
+            (ticketId >= 0) && (ticketId < ticketCounter),
+            "Ticket does not exist!"
+        );
+        TicketInfo memory ticketInfo = tickets[ticketId];
+        return (
+            ticketInfo.eventId,
+            ticketInfo.categoryId,
+            ticketInfo.owner,
+            ticketInfo.isOnSale,
+            ticketInfo.originalPrice,
+            ticketInfo.resalePrice
+        );
     }
 
     function getEventId(
