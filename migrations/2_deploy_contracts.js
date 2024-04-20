@@ -3,16 +3,12 @@ const EventMgmt = artifacts.require("EventMgmt");
 const TicketMkt = artifacts.require("TicketMkt");
 
 module.exports = function (deployer) {
-  let ticketMgmtInstance;
-
   deployer.deploy(TicketMgmt)
-    .then((ticketMgmt) => {
-      ticketMgmtInstance = ticketMgmt;
-
-      return deployer.deploy(EventMgmt, ticketMgmtInstance.address);
+    .then(function() {
+      return deployer.deploy(EventMgmt, TicketMgmt.address);
     })
-    .then((eventMgmt) => {
-      return deployer.deploy(TicketMkt, eventMgmt.address);
+    .then(function() {
+      return deployer.deploy(TicketMkt, EventMgmt.address);
     })
     .then(() => {
       console.log("Deployment completed successfully!");
