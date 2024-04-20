@@ -16,7 +16,7 @@ contract("TicketMister Tests", (accounts) => {
     ticketMgmtInstance = await TicketMgmt.deployed();
 
     // Deploy EventMgmt contract with TicketMgmt address
-<<<<<<< HEAD
+
     eventMgmtInstance = await EventMgmt.new(ticketMgmtInstance.address, {
       from: accounts[1],
     });
@@ -25,12 +25,12 @@ contract("TicketMister Tests", (accounts) => {
     ticketMktInstance = await TicketMkt.new(eventMgmtInstance.address, {
       from: accounts[1],
     });
-=======
+
     eventMgmtInstance = await EventMgmt.deployed();
 
     // Deploy TicketMkt contract with EventMgmt address
     ticketMktInstance = await TicketMkt.deployed();
->>>>>>> main
+
   });
 
   it("Testing Deployment of Contracts", async () => {
