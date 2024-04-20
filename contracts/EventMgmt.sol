@@ -120,7 +120,7 @@ contract EventMgmt is IEventMgmt {
         string memory categoryDescription,
         uint256 ticketPrice,
         uint256 numberOfTickets
-    ) public onlyEventOrganiser(eventId) override returns (uint256 categoryId) {
+    ) public override returns (uint256 categoryId) {
         categoryId = categoryCounter;
         categoryCounter++;
         CategoryInfo memory newCategory = CategoryInfo({
@@ -161,11 +161,6 @@ contract EventMgmt is IEventMgmt {
 
     function isEventOrganiser(uint256 eventId, address user) public view override returns (bool) {
         return events[eventId].eventOrganiser == user;
-    }
-
-    modifier onlyEventOrganiser(uint256 eventId) {
-        require(events[eventId].eventOrganiser == msg.sender, "Only event organiser can perform this action");
-        _;
     }
 
     function getTicketOwner(uint256 ticketId) public view override returns (address) {
