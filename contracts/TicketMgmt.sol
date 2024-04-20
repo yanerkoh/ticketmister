@@ -52,7 +52,7 @@ interface ITicketMgmt {
 
     function unlistTicketFromResale(uint256 ticketId) external;
 
-    function cancelTicketAndRefund(uint256 ticketId) external;
+    function cancelTicket(uint256 ticketId) external;
 }
 
 contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
@@ -91,10 +91,9 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         uint256 resalePrice
     );
     event TicketUnlistedFromResale(uint256 ticketId, address owner);
-    event TicketCancelledAndRefunded(
+    event TicketCancelled(
         uint256 ticketId,
-        address owner,
-        uint256 refundAmount
+        address owner
     );
 
     function createTickets(
@@ -132,13 +131,10 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         return ticketIds;
     }
 
-    function cancelTicketAndRefund(uint256 ticketId) external override {
-        address payable ticketOwner = payable(ownerOf(ticketId));
-        uint256 refundAmount = tickets[ticketId].originalPrice;
-        ticketOwner.transfer(refundAmount);
+    function cancelTicket(uint256 ticketId) external payable override {
         _burn(ticketId);
         delete tickets[ticketId];
-        emit TicketCancelledAndRefunded(ticketId, ticketOwner, refundAmount);
+        emit TicketCancelled(ticketId, ticketOwner);
     }
 
     function getTicketInfo(

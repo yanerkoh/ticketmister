@@ -28,7 +28,7 @@ interface IEventMgmt {
         uint256 newMaxResalePercentage
     ) external;
 
-    function cancelEventAndRefund(uint256 eventId) external;
+    function cancelEvent(uint256 eventId) external;
 
     function getEventInfo(
         uint256 eventId
@@ -158,7 +158,7 @@ contract EventMgmt is IEventMgmt {
         uint256 newMaxResalePercentage
     );
 
-    event EventCancelledAndRefunded(uint256 eventId);
+    event EventCancelled(uint256 eventId);
 
     event CategoryCreated(
         uint256 categoryId,
@@ -261,22 +261,14 @@ contract EventMgmt is IEventMgmt {
         emit EventMaxResalePercentageUpdated(eventId, newMaxResalePercentage);
     }
 
-    function cancelEventAndRefund(uint256 eventId) external override {
+    function cancelEvent(uint256 eventId) external override {
         require(
             (eventId >= 0) && (eventId < eventCounter),
             "Event does not exist!"
         );
         require(events[eventId].isActive, "Event is not active!");
-
-        uint256[] memory eventTickets = events[eventId].ticketIds;
-        for (uint256 index = 0; index < eventTickets.length; index++) {
-            uint256 ticketId = eventTickets[index];
-            if (getTicketOwner(ticketId) != tx.origin) {
-                ITicketMgmtInstance.cancelTicketAndRefund(ticketId);
-            }
-        }
         events[eventId].isActive = false;
-        emit EventCancelledAndRefunded(eventId);
+        emit EventCancelled(eventId);
     }
 
     function getEventInfo(
