@@ -24,6 +24,12 @@ contract TicketMkt {
     mapping(uint256 => uint256[]) private ticketsOnSale;
 
     event ticketBought(uint256 ticketId, address buyer, address seller);
+    event ticketGifted(uint256 ticketId, address recipient);
+    event ticketRefunded(
+        uint256 ticketId,
+        address refundRecipient,
+        uint256 refundAmount
+    );
 
     /**
         Main Functions For Event Organisers
@@ -78,28 +84,42 @@ contract TicketMkt {
         IEventMgmtInstance.updateMaxResalePercentage(eventId, newMaxPercentage);
     }
 
-    //function getRefundAmount(
-    //    uint256 eventId
-    //) public onlyEventOrganiser(eventId) returns (uint256 refundAmount) {
-    //    uint256[] memory eventTickets = getEventTickets(eventId);
-    //    uint256 refundAmount = 0;
-    //    for (uint256 index = 0; index < eventTickets.length; index++) {
-    //        uint256 ticketId = eventTickets[index];
-    //        address ticketOwner = IEventMgmtInstance.getTicketOwner(ticketId);
-    //        if (ticketOwner != msg.sender) {
-    //            refundAmount += IEventMgmtInstance.getTicketPrice(ticketId);
-    //        }
-    //    }
-    //    return refundAmount;
-    //}
+    function getRefundAmount(
+        uint256 eventId
+    ) public view onlyEventOrganiser(eventId) returns (uint256 refundAmount) {
+        uint256[] memory eventTickets = getEventTickets(eventId);
+        refundAmount = 0;
+        for (uint256 index = 0; index < eventTickets.length; index++) {
+            uint256 ticketId = eventTickets[index];
+            address ticketOwner = IEventMgmtInstance.getTicketOwner(ticketId);
+            if (ticketOwner != msg.sender) {
+                refundAmount += IEventMgmtInstance.getOriginalTicketPrice(
+                    ticketId
+                );
+            }
+        }
+        return refundAmount;
+    }
 
     function cancelEventAndRefund(
         uint256 eventId
     ) public payable onlyEventOrganiser(eventId) {
+        require(
+            msg.value == getRefundAmount(eventId),
+            "You need to have the exact amount for refunding!"
+        );
         uint256[] memory eventTickets = getEventTickets(eventId);
         for (uint256 index = 0; index < eventTickets.length; index++) {
             uint256 ticketId = eventTickets[index];
             address ticketOwner = IEventMgmtInstance.getTicketOwner(ticketId);
+
+            if (ticketOwner != msg.sender) {
+                address payable refundRecipient = payable(ticketOwner);
+                uint256 refundAmount = IEventMgmtInstance
+                    .getOriginalTicketPrice(ticketId);
+                refundRecipient.transfer(refundAmount);
+                emit ticketRefunded(ticketId, refundRecipient, refundAmount);
+            }
 
             // remove from ticketsOwned
             for (
@@ -109,7 +129,7 @@ contract TicketMkt {
                 i++
             ) {
                 // find the ticketId in the array
-                if (ticketsOwned[ticketOwner][index] == ticketId) {
+                if (ticketsOwned[ticketOwner][i] == ticketId) {
                     removeTicketFromTicketsOwned(ticketOwner, i);
                     break;
                 }
@@ -124,13 +144,16 @@ contract TicketMkt {
                     j++
                 ) {
                     // find the ticketId in the array
-                    if (ticketsOnSale[eventId][index] == ticketId) {
+                    if (ticketsOnSale[eventId][j] == ticketId) {
                         removeTicketFromTicketsOnSale(eventId, j);
                         break;
                     }
                 }
             }
+
+            IEventMgmtInstance.cancelTicket(ticketId);
         }
+        IEventMgmtInstance.cancelEvent(eventId);
     }
 
     /**
@@ -213,6 +236,22 @@ contract TicketMkt {
         ticketsOnSale[IEventMgmtInstance.getEventId(ticketId)].push(ticketId);
     }
 
+    function giftTicket(uint256 ticketId, address recipient) public {
+        require(
+            IEventMgmtInstance.getTicketOwner(ticketId) == msg.sender,
+            "You do not own this ticket!"
+        );
+        require(
+            IEventMgmtInstance.isForSale(ticketId) == false,
+            "This ticket is listed for sale! Unlist it to gift it!"
+        );
+        require(
+            recipient != address(0),
+            "Invalid recipient!"
+        );
+        IEventMgmtInstance.giftTicket(ticketId, recipient);
+        emit ticketGifted(ticketId, recipient);
+    }
 
     function unlistTicketFromResale(uint256 ticketId) public {
         require(
@@ -336,6 +375,24 @@ contract TicketMkt {
         return IEventMgmtInstance.getCategoryTickets(categoryId);
     }
 
+    /**
+        Getter functions (State variables)
+    */
+    function getEventsOrganised() public view returns (uint256[] memory eventIds) {
+        return eventsOrganised[msg.sender];
+    }
+
+    function getTicketsOwned() public view returns (uint256[] memory ticketIds) {
+        return ticketsOwned[msg.sender];
+    }
+
+    function getTicketsOnSale(uint256 eventId) public view returns (uint256[] memory ticketIds) {
+        return ticketsOnSale[eventId];
+    }
+
+    /**
+        Modifiers
+     */
     modifier onlyEventOrganiser(uint256 eventId) {
         require(
             IEventMgmtInstance.isEventOrganiser(eventId, msg.sender),
