@@ -74,6 +74,7 @@ contract TicketMkt {
         );
     }
 
+event DebugLog(string message, uint256 value);
     function createTicketCategory(
         uint256 eventId,
         string memory categoryName,
@@ -81,6 +82,7 @@ contract TicketMkt {
         uint256 ticketPrice,
         uint256 numberOfTickets
     ) public onlyEventOrganiser(eventId) returns (uint256 categoryId) {
+        emit DebugLog("Creating category", categoryId);
         categoryId = IEventMgmtInstance.createCategory(
             eventId,
             categoryName,
@@ -88,9 +90,12 @@ contract TicketMkt {
             ticketPrice,
             numberOfTickets
         );
+       
         uint256[] memory tickets = IEventMgmtInstance.getCategoryTickets(
             categoryId
         );
+        
+
         for (uint256 i = 0; i < tickets.length; i++) {
             ticketsOwned[msg.sender].push(tickets[i]);
             ticketsOnSale[eventId].push(tickets[i]);
