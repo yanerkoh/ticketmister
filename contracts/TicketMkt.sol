@@ -357,6 +357,24 @@ contract TicketMkt {
         return IEventMgmtInstance.getCategoryTickets(categoryId);
     }
 
+    /**
+        Getter functions (State variables)
+    */
+    function getEventsOrganised() public view returns (uint256[] memory eventIds) {
+        return eventsOrganised[msg.sender];
+    }
+
+    function getTicketsOwned() public view returns (uint256[] memory ticketIds) {
+        return ticketsOwned[msg.sender];
+    }
+
+    function getTicketsOnSale(uint256 eventId) public view returns (uint256[] memory ticketIds) {
+        return ticketsOnSale[eventId];
+    }
+
+    /**
+        Modifiers
+     */
     modifier onlyEventOrganiser(uint256 eventId) {
         require(
             IEventMgmtInstance.isEventOrganiser(eventId, msg.sender),
