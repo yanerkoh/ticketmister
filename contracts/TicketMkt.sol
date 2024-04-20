@@ -23,6 +23,23 @@ contract TicketMkt {
     // eventId mapped to array of ticketIds of all tickets on sale (whether first sale or resale)
     mapping(uint256 => uint256[]) private ticketsOnSale;
 
+    event EventCreated(
+        uint256 eventId,
+        string eventName,
+        address eventOrganiser,
+        string eventDescription,
+        uint256 maxResalePercentage
+    );
+
+    event CategoryCreated(
+        uint256 categoryId,
+        uint256 eventId,
+        string categoryName,
+        string categoryDescription,
+        uint256 ticketPrice,
+        uint256 numberOfTickets
+    );
+
     event ticketBought(uint256 ticketId, address buyer, address seller);
     event ticketGifted(uint256 ticketId, address recipient);
     event ticketRefunded(
@@ -45,6 +62,14 @@ contract TicketMkt {
             maxResalePercentage
         );
         eventsOrganised[msg.sender].push(eventId);
+
+        emit EventCreated(
+            eventId,
+            eventName,
+            tx.origin,
+            eventDescription,
+            maxResalePercentage
+        );
     }
 
     function createTicketCategory(
@@ -68,6 +93,7 @@ contract TicketMkt {
             ticketsOwned[msg.sender].push(tickets[i]);
             ticketsOnSale[eventId].push(tickets[i]);
         }
+        
     }
 
     function updateEventDescription(

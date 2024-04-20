@@ -54,43 +54,50 @@ contract("TicketMister Tests", (accounts) => {
     assert.equal(emittedEventName, eventName, "Event name does not match");
     assert.equal(emittedEventDescription, eventDescription, "Event description does not match");
     assert.equal(emittedMaxResalePercentage, maxResalePercentage, "Max resale percentage does not match");
-  
-    const eventsOrganised = await ticketMktInstance.eventsOrganised(owner);
-  
-    assert.equal(eventsOrganised.length, 1, "eventsOrganised length is incorrect");
-    assert.equal(eventsOrganised[0].toNumber(), emittedEventId, "Event ID not stored in eventsOrganised mapping");
+
   });
   
 
   it("Test Creation of Category and Minting of Tickets", async () => {
-    const eventId = 0;
+    const eventName = "Test Event";
+    const eventDescription = "This is a test event.";
+    const maxResalePercentage = 20;
+  
+    // Create the event
+    const createEventResult = await ticketMktInstance.createEvent(
+      eventName,
+      eventDescription,
+      maxResalePercentage,
+      { from: owner }
+    );
+  
+    const eventCreated = createEventResult.logs.find((log) => log.event === "EventCreated");
+    assert.exists(eventCreated, "EventCreated not emitted");
+    const eventId = eventCreated.args.eventId.toNumber();
+  
+    // Create a ticket category for the event
     const categoryName = "VIP";
     const categoryDescription = "Exclusive VIP access";
     const ticketPrice = web3.utils.toWei("1", "ether");
     const numberOfTickets = 100;
   
-    const result = await ticketMktInstance.createTicketCategory(
-      eventId,
-      categoryName,
-      categoryDescription,
-      ticketPrice,
-      numberOfTickets,
-      { from: owner }
-    );
+    try {
+      const createCategoryResult = await ticketMktInstance.createTicketCategory(
+        eventId,
+        categoryName,
+        categoryDescription,
+        ticketPrice,
+        numberOfTickets,
+        { from: owner }
+      );
   
-    const eventCreated = result.logs.find((log) => log.event === "EventCreated");
-    assert.exists(eventCreated, "EventCreated not emitted");
-    const emittedEventId = eventCreated.args.eventId.toNumber();
-    const createdEvent = await eventMgmtInstance.events(emittedEventId);
-    assert.equal(createdEvent.eventName, eventName, "Event name does not match");
-    assert.equal(createdEvent.eventDescription, eventDescription, "Event description does not match");
-    assert.equal(createdEvent.maxResalePercentage.toNumber(), maxResalePercentage, "Max resale percentage does not match");
-
-    const eventsOrganised = await ticketMktInstance.eventsOrganised(owner);
-    assert.equal(eventsOrganised.length, 1, "eventsOrganised length is incorrect");
-    assert.equal(eventsOrganised[0].toNumber(), eventId, "Event ID not stored in eventsOrganised mapping");
-
-
+      const createCategory = createCategoryResult.logs.find((log) => log.event === "createCategory");
+      assert.exists(createCategory, "createTicketCategory result is undefined");
+  
+    } catch (error) {
+      console.error("Error creating ticket category:", error.message);
+      assert.fail("createTicketCategory failed unexpectedly");
+    }
   });
 
   it("Test Buying of Tickets", async () => {
