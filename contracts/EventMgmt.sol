@@ -18,8 +18,8 @@ interface IEventMgmt {
         uint256 numberOfTickets
     ) external returns (uint256 categoryId);
 
+    function getEventInfo(uint256 eventId) external view returns (string memory eventName, address eventOrganiser, string memory eventDescription, uint256 maxResalePercentage, bool isActive, uint256[] memory categoryIds);
     function getEventTickets(uint256 eventId) external view returns (uint256[] memory tickets);
-    function getEventCategories(uint256 eventId) external view returns (uint256[] memory categories);
     function getCategoryTickets(uint256 categoryId) external view returns (uint256[] memory tickets);
     function isEventOrganiser(uint256 eventId, address user) external view returns (bool);
 
@@ -152,16 +152,16 @@ contract EventMgmt is IEventMgmt {
         return categoryId;
     }
 
+    function getEventInfo(uint256 eventId) public view override returns (string memory, address, string memory, uint256, bool, uint256[] memory) {
+        require((eventId >= 0) && (eventId < eventCounter) , "Event does not exist!");
+        EventInfo memory eventInfo = events[eventId];
+        return (eventInfo.eventName, eventInfo.eventOrganiser, eventInfo.eventDescription, eventInfo.maxResalePercentage, eventInfo.isActive, eventInfo.categoryIds);
+    }
+
     function getEventTickets(uint256 eventId) public view override returns (uint256[] memory) {
         require((eventId >= 0) && (eventId < eventCounter) , "Event does not exist!");
         uint256[] memory eventTickets = events[eventId].ticketIds;
         return eventTickets;
-    }
-
-    function getEventCategories(uint256 eventId) public view override returns (uint256[] memory) {
-        require((eventId >= 0) && (eventId < eventCounter) , "Event does not exist!");
-        uint256[] memory eventCategories = events[eventId].categoryIds;
-        return eventCategories;
     }
 
     function getCategoryTickets(uint256 categoryId) public view override returns (uint256[] memory) {

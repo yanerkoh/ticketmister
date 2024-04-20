@@ -25,6 +25,9 @@ contract TicketMkt {
 
     event ticketBought(uint256 ticketId, address buyer, address seller);
 
+    /**
+        Main Functions For Event Organisers
+     */
     function createEvent(
         string memory eventName,
         string memory eventDescription,
@@ -61,6 +64,10 @@ contract TicketMkt {
         }
     }
 
+
+    /**
+        Main Functions For Ticket Buyers
+     */
     function buyTicket(uint256 ticketId) public payable {
         require(
             IEventMgmtInstance.isForSale(ticketId),
@@ -117,6 +124,10 @@ contract TicketMkt {
         emit ticketBought(ticketId, msg.sender, currentOwner);
     }
 
+
+    /**
+        Main Functions For Resellers
+     */
     function listTicketForResale(uint256 ticketId, uint256 resalePrice) public {
         require(
             IEventMgmtInstance.getTicketOwner(ticketId) == msg.sender,
@@ -161,6 +172,10 @@ contract TicketMkt {
         }
     }
 
+
+    /**
+        Helper Functions (Private)
+     */
     function removeTicketFromTicketsOwned(address owner, uint256 index)
         private
     {
@@ -188,8 +203,13 @@ contract TicketMkt {
         ticketsOnSale[eventId].pop();
     }
 
-    function getEventCategories(uint256 eventId) view public returns (uint256[] memory eventCategories) {
-        return IEventMgmtInstance.getEventCategories(eventId);
+
+    /**
+        Getter Functions
+     */
+    function getEventInfo(uint256 eventId) view public returns (string memory eventName, address eventOrganiser, string memory eventDescription, uint256 maxResalePercentage, bool isActive, uint256[] memory categoryIds)
+    {
+        return IEventMgmtInstance.getEventInfo(eventId);
     }
 
     function getEventTickets(uint256 eventId) view public returns (uint256[] memory eventTickets) {
@@ -199,6 +219,7 @@ contract TicketMkt {
     function getCategoryTickets(uint256 categoryId) view public returns (uint256[] memory categoryTickets) {
         return IEventMgmtInstance.getCategoryTickets(categoryId);
     }
+
 
     modifier onlyEventOrganiser(uint256 eventId) {
         require(
