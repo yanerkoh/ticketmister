@@ -306,6 +306,10 @@ contract TicketMister is ERC721URIStorage, Ownable {
         emit RewardEarned(msg.sender, rewardsEarned);
     }
 
+    function checkRewardTokenBalance() public view returns (uint256) {
+        return rewardToken.balanceOf(msg.sender);
+    }
+
     // Function to list a ticket for resale
     function listTicketForResale(uint256 ticketId, uint256 price) public {
         require(ownerOf(ticketId) == msg.sender, "You don't own this ticket");
