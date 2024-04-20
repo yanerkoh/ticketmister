@@ -7,6 +7,8 @@ interface IEventMgmt {
     function createEvent(
         string memory eventName,
         string memory eventDescription,
+        string memory eventLocation,
+        string memory eventDate,
         uint256 maxResalePercentage
     ) external returns (uint256 eventId);
 
@@ -28,6 +30,16 @@ interface IEventMgmt {
         uint256 newMaxResalePercentage
     ) external;
 
+    function updateEventLocation(
+        uint256 eventId,
+        string memory newLocation
+    ) external;
+
+    function updateEventDate(
+        uint256 eventId,
+        string memory newDate
+    ) external;
+
     function cancelEvent(uint256 eventId) external;
     function cancelTicket(uint256 ticketId) external;
 
@@ -40,6 +52,8 @@ interface IEventMgmt {
             string memory eventName,
             address eventOrganiser,
             string memory eventDescription,
+            string memory eventLocation,
+            string memory eventDate,
             uint256 maxResalePercentage,
             bool isActive,
             uint256[] memory categoryIds
@@ -138,6 +152,8 @@ contract EventMgmt is IEventMgmt {
         string eventName;
         address eventOrganiser;
         string eventDescription;
+        string eventLocation;
+        string eventDate;
         uint256 maxResalePercentage;
         bool isActive;
         uint256[] categoryIds;
@@ -158,10 +174,16 @@ contract EventMgmt is IEventMgmt {
         string eventName,
         address eventOrganiser,
         string eventDescription,
+        string eventLocation,
+        string eventDate,
         uint256 maxResalePercentage
     );
 
     event EventDescriptionUpdated(uint256 eventId, string newDescription);
+
+    event EventLocationUpdated(uint256 eventId, string newDescription);
+
+    event EventDateUpdated(uint256 eventId, string newDescription);
 
     event EventMaxResalePercentageUpdated(
         uint256 eventId,
@@ -182,6 +204,8 @@ contract EventMgmt is IEventMgmt {
     function createEvent(
         string memory eventName,
         string memory eventDescription,
+        string memory eventLocation,
+        string memory eventDate,
         uint256 maxResalePercentage
     ) public override returns (uint256 eventId) {
         eventCounter++;
@@ -191,6 +215,8 @@ contract EventMgmt is IEventMgmt {
             eventName: eventName,
             eventOrganiser: tx.origin,
             eventDescription: eventDescription,
+            eventLocation: eventLocation,
+            eventDate: eventDate,
             maxResalePercentage: maxResalePercentage,
             isActive: true,
             categoryIds: new uint256[](0),
@@ -198,8 +224,17 @@ contract EventMgmt is IEventMgmt {
         });
         events[eventId] = newEvent;
 
+        emit EventCreated(
+            eventId,
+            eventName,
+            tx.origin,
+            eventDescription,
+            eventLocation,
+            eventDate,
+            maxResalePercentage
+        );
     }
-
+    
     function createCategory(
         uint256 eventId,
         string memory categoryName,
@@ -252,6 +287,30 @@ contract EventMgmt is IEventMgmt {
         emit EventDescriptionUpdated(eventId, newDescription);
     }
 
+    function updateEventLocation(
+        uint256 eventId,
+        string memory newLocation
+    ) external override {
+        require(
+            (eventId > 0) && (eventId <= eventCounter),
+            "Event does not exist!"
+        );
+        events[eventId].eventLocation = newLocation;
+        emit EventLocationUpdated(eventId, newLocation);
+    }
+
+    function updateEventDate(
+        uint256 eventId,
+        string memory newDate
+    ) external override {
+        require(
+            (eventId > 0) && (eventId <= eventCounter),
+            "Event does not exist!"
+        );
+        events[eventId].eventDate = newDate;
+        emit EventDateUpdated(eventId, newDate);
+    }
+
     function updateMaxResalePercentage(
         uint256 eventId,
         uint256 newMaxResalePercentage
@@ -288,6 +347,8 @@ contract EventMgmt is IEventMgmt {
             string memory,
             address,
             string memory,
+            string memory,
+            string memory,
             uint256,
             bool,
             uint256[] memory
@@ -302,6 +363,8 @@ contract EventMgmt is IEventMgmt {
             eventInfo.eventName,
             eventInfo.eventOrganiser,
             eventInfo.eventDescription,
+            eventInfo.eventLocation,
+            eventInfo.eventDate,
             eventInfo.maxResalePercentage,
             eventInfo.isActive,
             eventInfo.categoryIds

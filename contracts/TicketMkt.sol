@@ -35,10 +35,12 @@ contract TicketMkt {
         string eventName,
         address eventOrganiser,
         string eventDescription,
+        string eventLocation,
+        string eventDate,
         uint256 maxResalePercentage
     );
 
-    event CategoryCreated(
+    event TicketCategoryCreated(
         uint256 categoryId,
         uint256 eventId,
         string categoryName,
@@ -56,6 +58,10 @@ contract TicketMkt {
         address refundRecipient,
         uint256 refundAmount
     );
+    event EventDescriptionUpdated(uint256 eventId, string newDescription);
+    event EventLocationUpdated(uint256 eventId, string newLocation);
+    event EventDateUpdated(uint256 eventId, string newDate);
+    event MaxResalePercentageUpdated(uint256 eventId, uint256 newMaxPercentage);
 
     /**
         Main Functions For Event Organisers
@@ -63,11 +69,15 @@ contract TicketMkt {
     function createEvent(
         string memory eventName,
         string memory eventDescription,
+        string memory eventLocation,
+        string memory eventDate,
         uint256 maxResalePercentage
     ) public returns (uint256 eventId) {
         eventId = IEventMgmtInstance.createEvent(
             eventName,
             eventDescription,
+            eventLocation,
+            eventDate,
             maxResalePercentage
         );
         eventsOrganised[msg.sender].push(eventId);
@@ -77,6 +87,8 @@ contract TicketMkt {
             eventName,
             tx.origin,
             eventDescription,
+            eventLocation,
+            eventDate,
             maxResalePercentage
         );
     }
@@ -109,6 +121,23 @@ contract TicketMkt {
         string memory newDescription
     ) public onlyEventOrganiser(eventId) {
         IEventMgmtInstance.updateEventDescription(eventId, newDescription);
+        emit EventDescriptionUpdated(eventId, newDescription);
+    }
+
+    function updateEventLocation(
+        uint256 eventId,
+        string memory newLocation
+    ) public onlyEventOrganiser(eventId) {
+        IEventMgmtInstance.updateEventLocation(eventId, newLocation);
+        emit EventLocationUpdated(eventId, newLocation);
+    }
+
+    function updateEventDate(
+        uint256 eventId,
+        string memory newDate
+    ) public onlyEventOrganiser(eventId) {
+        IEventMgmtInstance.updateEventDate(eventId, newDate);
+        emit EventDateUpdated(eventId, newDate);
     }
 
     function updateMaxResalePercentage(
@@ -116,6 +145,7 @@ contract TicketMkt {
         uint256 newMaxPercentage
     ) public onlyEventOrganiser(eventId) {
         IEventMgmtInstance.updateMaxResalePercentage(eventId, newMaxPercentage);
+        emit MaxResalePercentageUpdated(eventId, newMaxPercentage);
     }
 
     function getRefundAmount(
@@ -373,6 +403,8 @@ contract TicketMkt {
             string memory eventName,
             address eventOrganiser,
             string memory eventDescription,
+            string memory eventLocation,
+            string memory eventDate,
             uint256 maxResalePercentage,
             bool isActive,
             uint256[] memory categoryIds
@@ -449,6 +481,16 @@ contract TicketMkt {
         uint256 eventId
     ) public view returns (uint256[] memory ticketIds) {
         return ticketsOnSale[eventId];
+    }
+
+    function getTicketOwner(uint256 ticketId) public view returns (address) {
+        return IEventMgmtInstance.getTicketOwner(ticketId);
+    }
+
+    function getOriginalTicketPrice(
+        uint256 ticketId
+    ) public view returns (uint256) {
+        return IEventMgmtInstance.getOriginalTicketPrice(ticketId);
     }
 
     /**
