@@ -64,7 +64,6 @@ contract TicketMkt {
         }
     }
 
-
     /**
         Main Functions For Ticket Buyers
      */
@@ -124,7 +123,6 @@ contract TicketMkt {
         emit ticketBought(ticketId, msg.sender, currentOwner);
     }
 
-
     /**
         Main Functions For Resellers
      */
@@ -172,13 +170,13 @@ contract TicketMkt {
         }
     }
 
-
     /**
         Helper Functions (Private)
      */
-    function removeTicketFromTicketsOwned(address owner, uint256 index)
-        private
-    {
+    function removeTicketFromTicketsOwned(
+        address owner,
+        uint256 index
+    ) private {
         // index = index of ticket to remove
         for (uint256 i = index; i < ticketsOwned[owner].length - 1; i++) {
             // shift all tickets from index onwards, to the left
@@ -203,23 +201,37 @@ contract TicketMkt {
         ticketsOnSale[eventId].pop();
     }
 
-
     /**
         Getter Functions
      */
-    function getEventInfo(uint256 eventId) view public returns (string memory eventName, address eventOrganiser, string memory eventDescription, uint256 maxResalePercentage, bool isActive, uint256[] memory categoryIds)
+    function getEventInfo(
+        uint256 eventId
+    )
+        public
+        view
+        returns (
+            string memory eventName,
+            address eventOrganiser,
+            string memory eventDescription,
+            uint256 maxResalePercentage,
+            bool isActive,
+            uint256[] memory categoryIds
+        )
     {
         return IEventMgmtInstance.getEventInfo(eventId);
     }
 
-    function getEventTickets(uint256 eventId) view public returns (uint256[] memory eventTickets) {
+    function getEventTickets(
+        uint256 eventId
+    ) public view returns (uint256[] memory eventTickets) {
         return IEventMgmtInstance.getEventTickets(eventId);
     }
 
-    function getCategoryTickets(uint256 categoryId) view public returns (uint256[] memory categoryTickets) {
+    function getCategoryTickets(
+        uint256 categoryId
+    ) public view returns (uint256[] memory categoryTickets) {
         return IEventMgmtInstance.getCategoryTickets(categoryId);
     }
-
 
     modifier onlyEventOrganiser(uint256 eventId) {
         require(

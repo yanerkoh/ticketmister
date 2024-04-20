@@ -18,17 +18,24 @@ interface ITicketMgmt {
     function getEventId(uint256 ticketId) external view returns (uint256);
     function getTicketOwner(uint256 ticketId) external view returns (address);
     function isForSale(uint256 ticketId) external view returns (bool);
-    function getOriginalTicketPrice(uint256 ticketId) external view returns (uint256);
-    function getResaleTicketPrice(uint256 ticketId) external view returns (uint256);
+    function getOriginalTicketPrice(
+        uint256 ticketId
+    ) external view returns (uint256);
+    function getResaleTicketPrice(
+        uint256 ticketId
+    ) external view returns (uint256);
 
     function transferTicket(uint256 ticketId, address newOwner) external;
-    function listTicketForResale(uint256 ticketId, uint256 resalePrice) external;
+    function listTicketForResale(
+        uint256 ticketId,
+        uint256 resalePrice
+    ) external;
     function unlistTicketFromResale(uint256 ticketId) external;
 }
 
 contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
     constructor() ERC721("TicketMister", "TMT") {}
-    
+
     // counter for ticketId - incremented each time a new tick is created;
     uint256 private ticketCounter;
 
@@ -45,9 +52,22 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         uint256 resalePrice;
     }
 
-    event TicketsCreated(uint256 eventId, uint256 categoryId, uint256 numberOfTickets, address owner);
-    event TicketTransferred(uint256 ticketId, address previousOwner, address newOwner);
-    event TicketListedForResale(uint256 ticketId, address owner, uint256 resalePrice);
+    event TicketsCreated(
+        uint256 eventId,
+        uint256 categoryId,
+        uint256 numberOfTickets,
+        address owner
+    );
+    event TicketTransferred(
+        uint256 ticketId,
+        address previousOwner,
+        address newOwner
+    );
+    event TicketListedForResale(
+        uint256 ticketId,
+        address owner,
+        uint256 resalePrice
+    );
     event TicketUnlistedFromResale(uint256 ticketId, address owner);
 
     function createTickets(
@@ -85,33 +105,62 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         return ticketIds;
     }
 
-    function getEventId(uint256 ticketId) public view override returns (uint256) {
-        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
+    function getEventId(
+        uint256 ticketId
+    ) public view override returns (uint256) {
+        require(
+            (ticketId >= 0) && (ticketId < ticketCounter),
+            "Ticket does not exist!"
+        );
         return tickets[ticketId].eventId;
     }
 
-    function getTicketOwner(uint256 ticketId) public view override returns (address) {
-        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
+    function getTicketOwner(
+        uint256 ticketId
+    ) public view override returns (address) {
+        require(
+            (ticketId >= 0) && (ticketId < ticketCounter),
+            "Ticket does not exist!"
+        );
         return tickets[ticketId].owner;
     }
 
     function isForSale(uint256 ticketId) public view override returns (bool) {
-        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
+        require(
+            (ticketId >= 0) && (ticketId < ticketCounter),
+            "Ticket does not exist!"
+        );
         return tickets[ticketId].isOnSale;
     }
 
-    function getOriginalTicketPrice(uint256 ticketId) public view override returns (uint256) {
-        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
+    function getOriginalTicketPrice(
+        uint256 ticketId
+    ) public view override returns (uint256) {
+        require(
+            (ticketId >= 0) && (ticketId < ticketCounter),
+            "Ticket does not exist!"
+        );
         return tickets[ticketId].originalPrice;
     }
 
-    function getResaleTicketPrice(uint256 ticketId) public view override returns (uint256) {
-        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
+    function getResaleTicketPrice(
+        uint256 ticketId
+    ) public view override returns (uint256) {
+        require(
+            (ticketId >= 0) && (ticketId < ticketCounter),
+            "Ticket does not exist!"
+        );
         return tickets[ticketId].resalePrice;
     }
 
-    function transferTicket(uint256 ticketId, address newOwner) public override {
-        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
+    function transferTicket(
+        uint256 ticketId,
+        address newOwner
+    ) public override {
+        require(
+            (ticketId >= 0) && (ticketId < ticketCounter),
+            "Ticket does not exist!"
+        );
         address currentOwner = tickets[ticketId].owner;
         _transfer(currentOwner, newOwner, ticketId);
         tickets[ticketId].owner = newOwner;
@@ -119,15 +168,24 @@ contract TicketMgmt is ERC721URIStorage, ITicketMgmt {
         emit TicketTransferred(ticketId, currentOwner, newOwner);
     }
 
-    function listTicketForResale(uint256 ticketId, uint256 resalePrice) public override {
-        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
+    function listTicketForResale(
+        uint256 ticketId,
+        uint256 resalePrice
+    ) public override {
+        require(
+            (ticketId >= 0) && (ticketId < ticketCounter),
+            "Ticket does not exist!"
+        );
         tickets[ticketId].isOnSale = true;
         tickets[ticketId].resalePrice = resalePrice;
         emit TicketListedForResale(ticketId, tx.origin, resalePrice);
     }
 
     function unlistTicketFromResale(uint256 ticketId) public {
-        require((ticketId >= 0) && (ticketId < ticketCounter), "Ticket does not exist!");
+        require(
+            (ticketId >= 0) && (ticketId < ticketCounter),
+            "Ticket does not exist!"
+        );
         tickets[ticketId].isOnSale = false;
         emit TicketUnlistedFromResale(ticketId, tx.origin);
     }

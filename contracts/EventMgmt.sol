@@ -18,24 +18,47 @@ interface IEventMgmt {
         uint256 numberOfTickets
     ) external returns (uint256 categoryId);
 
-    function getEventInfo(uint256 eventId) external view returns (string memory eventName, address eventOrganiser, string memory eventDescription, uint256 maxResalePercentage, bool isActive, uint256[] memory categoryIds);
-    function getEventTickets(uint256 eventId) external view returns (uint256[] memory tickets);
-    function getCategoryTickets(uint256 categoryId) external view returns (uint256[] memory tickets);
-    function isEventOrganiser(uint256 eventId, address user) external view returns (bool);
+    function getEventInfo(
+        uint256 eventId
+    )
+        external
+        view
+        returns (
+            string memory eventName,
+            address eventOrganiser,
+            string memory eventDescription,
+            uint256 maxResalePercentage,
+            bool isActive,
+            uint256[] memory categoryIds
+        );
+    function getEventTickets(
+        uint256 eventId
+    ) external view returns (uint256[] memory tickets);
+    function getCategoryTickets(
+        uint256 categoryId
+    ) external view returns (uint256[] memory tickets);
+    function isEventOrganiser(
+        uint256 eventId,
+        address user
+    ) external view returns (bool);
 
     function getEventId(uint256 ticketId) external view returns (uint256);
     function getTicketOwner(uint256 ticketId) external view returns (address);
     function isForSale(uint256 ticketId) external view returns (bool);
     function getTicketPrice(uint256 ticketId) external view returns (uint256);
 
-    function transferTicket(uint256 ticketId, address newOwner) external; 
-    function calculateMaxResalePrice(uint256 ticketId) external view returns (uint256);
-    function listTicketForResale(uint256 ticketId, uint256 resalePrice) external;
+    function transferTicket(uint256 ticketId, address newOwner) external;
+    function calculateMaxResalePrice(
+        uint256 ticketId
+    ) external view returns (uint256);
+    function listTicketForResale(
+        uint256 ticketId,
+        uint256 resalePrice
+    ) external;
     function unlistTicketFromResale(uint256 ticketId) external;
 }
 
 contract EventMgmt is IEventMgmt {
-
     ITicketMgmt private ITicketMgmtInstance;
 
     constructor(address _ticketMgmtAddress) {
@@ -132,7 +155,12 @@ contract EventMgmt is IEventMgmt {
             categoryName: categoryName,
             categoryDescription: categoryDescription,
             ticketPrice: ticketPrice,
-            ticketIds: ITicketMgmtInstance.createTickets(eventId, categoryId, ticketPrice, numberOfTickets)
+            ticketIds: ITicketMgmtInstance.createTickets(
+                eventId,
+                categoryId,
+                ticketPrice,
+                numberOfTickets
+            )
         });
 
         categories[categoryId] = newCategory;
@@ -152,34 +180,78 @@ contract EventMgmt is IEventMgmt {
         return categoryId;
     }
 
-    function getEventInfo(uint256 eventId) public view override returns (string memory, address, string memory, uint256, bool, uint256[] memory) {
-        require((eventId >= 0) && (eventId < eventCounter) , "Event does not exist!");
+    function getEventInfo(
+        uint256 eventId
+    )
+        public
+        view
+        override
+        returns (
+            string memory,
+            address,
+            string memory,
+            uint256,
+            bool,
+            uint256[] memory
+        )
+    {
+        require(
+            (eventId >= 0) && (eventId < eventCounter),
+            "Event does not exist!"
+        );
         EventInfo memory eventInfo = events[eventId];
-        return (eventInfo.eventName, eventInfo.eventOrganiser, eventInfo.eventDescription, eventInfo.maxResalePercentage, eventInfo.isActive, eventInfo.categoryIds);
+        return (
+            eventInfo.eventName,
+            eventInfo.eventOrganiser,
+            eventInfo.eventDescription,
+            eventInfo.maxResalePercentage,
+            eventInfo.isActive,
+            eventInfo.categoryIds
+        );
     }
 
-    function getEventTickets(uint256 eventId) public view override returns (uint256[] memory) {
-        require((eventId >= 0) && (eventId < eventCounter) , "Event does not exist!");
+    function getEventTickets(
+        uint256 eventId
+    ) public view override returns (uint256[] memory) {
+        require(
+            (eventId >= 0) && (eventId < eventCounter),
+            "Event does not exist!"
+        );
         uint256[] memory eventTickets = events[eventId].ticketIds;
         return eventTickets;
     }
 
-    function getCategoryTickets(uint256 categoryId) public view override returns (uint256[] memory) {
-        require((categoryId >= 0) && (categoryId < categoryCounter), "Category does not exist!");
+    function getCategoryTickets(
+        uint256 categoryId
+    ) public view override returns (uint256[] memory) {
+        require(
+            (categoryId >= 0) && (categoryId < categoryCounter),
+            "Category does not exist!"
+        );
         uint256[] memory tickets = categories[categoryId].ticketIds;
         return tickets;
     }
 
-    function isEventOrganiser(uint256 eventId, address user) public view override returns (bool) {
-        require((eventId >= 0) && (eventId < eventCounter) , "Event does not exist!");
+    function isEventOrganiser(
+        uint256 eventId,
+        address user
+    ) public view override returns (bool) {
+        require(
+            (eventId >= 0) && (eventId < eventCounter),
+            "Event does not exist!"
+        );
         return events[eventId].eventOrganiser == user;
     }
 
-    function getTicketOwner(uint256 ticketId) public view override returns (address) {
+    function getTicketOwner(
+        uint256 ticketId
+    ) public view override returns (address) {
         return ITicketMgmtInstance.getTicketOwner(ticketId);
     }
 
-    function getTicketPrice(uint256 ticketId) public view override returns (uint256) {
+    function getTicketPrice(
+        uint256 ticketId
+    ) public view override returns (uint256) {
         if (ITicketMgmtInstance.getResaleTicketPrice(ticketId) != 0) {
             return ITicketMgmtInstance.getResaleTicketPrice(ticketId);
         } else {
@@ -191,25 +263,39 @@ contract EventMgmt is IEventMgmt {
         return ITicketMgmtInstance.isForSale(ticketId);
     }
 
-    function transferTicket(uint256 ticketId, address newOwner) public override {
+    function transferTicket(
+        uint256 ticketId,
+        address newOwner
+    ) public override {
         ITicketMgmtInstance.transferTicket(ticketId, newOwner);
     }
 
-    function calculateMaxResalePrice(uint256 ticketId) public view override returns (uint256) {
-        uint256 originalPrice = ITicketMgmtInstance.getOriginalTicketPrice(ticketId);
-        uint256 maxResalePercentage = events[ITicketMgmtInstance.getEventId(ticketId)].maxResalePercentage;
-        return originalPrice + (originalPrice * maxResalePercentage / 100);
+    function calculateMaxResalePrice(
+        uint256 ticketId
+    ) public view override returns (uint256) {
+        uint256 originalPrice = ITicketMgmtInstance.getOriginalTicketPrice(
+            ticketId
+        );
+        uint256 maxResalePercentage = events[
+            ITicketMgmtInstance.getEventId(ticketId)
+        ].maxResalePercentage;
+        return originalPrice + ((originalPrice * maxResalePercentage) / 100);
     }
 
-    function listTicketForResale(uint256 ticketId, uint256 resalePrice) public override {
+    function listTicketForResale(
+        uint256 ticketId,
+        uint256 resalePrice
+    ) public override {
         ITicketMgmtInstance.listTicketForResale(ticketId, resalePrice);
-    } 
+    }
 
     function unlistTicketFromResale(uint256 ticketId) public override {
         ITicketMgmtInstance.unlistTicketFromResale(ticketId);
     }
 
-    function getEventId(uint256 ticketId) public view override returns (uint256) {
-       return ITicketMgmtInstance.getEventId(ticketId);
+    function getEventId(
+        uint256 ticketId
+    ) public view override returns (uint256) {
+        return ITicketMgmtInstance.getEventId(ticketId);
     }
 }
