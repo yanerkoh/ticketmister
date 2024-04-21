@@ -7,18 +7,13 @@ import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./EventMgmt.sol";
 import "./TicketMgmt.sol";
 
-//import "./RewardToken.sol";
-
 contract TicketMkt {
     using SafeMath for uint256;
 
     IEventMgmt private IEventMgmtInstance;
 
-    //RewardToken private rewardToken;
-
     constructor(address _eventMgmtAddress) {
         IEventMgmtInstance = IEventMgmt(_eventMgmtAddress);
-        //rewardToken = RewardToken(_rewardTokenAddress);
     }
 
     // address of event organiser mapped to an array of eventIds
