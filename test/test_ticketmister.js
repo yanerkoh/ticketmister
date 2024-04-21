@@ -273,8 +273,8 @@ contract("TicketMister Tests", (accounts) => {
     const ownerOfTicket = await ticketMgmtInstance.getTicketOwner(ticketId);
     assert.equal(ownerOfTicket, user1, "The ticket owner should be user1 after purchase");
 
-    // Check for the 'ticketBought' event and 'RewardEarned' event
-    assert.equal(result.logs[0].event, "ticketBought", "Event ticketBought should be emitted");
+    // Check for the 'TicketBought' event and 'RewardEarned' event
+    assert.equal(result.logs[0].event, "TicketBought", "Event ticketBought should be emitted");
     assert.equal(result.logs[1].event, "RewardEarned", "Event RewardEarned should be emitted");
     assert.equal(result.logs[0].args.buyer, user1, "The buyer in the event should be user1");
 
