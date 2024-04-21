@@ -326,10 +326,10 @@ contract TicketMkt {
         return rewardPoints[account];
     }
 
-    function checkDiscountedPrice(uint256 ticketId) public view returns (uint256 originalPrice, uint256 discountedPrice) {
+    function checkDiscountedPrice(uint256 ticketId) public view returns (uint256 discountedPrice) {
         require(IEventMgmtInstance.isForSale(ticketId), "This ticket is not for sale!");
 
-        originalPrice = IEventMgmtInstance.getTicketPrice(ticketId);
+        uint256 originalPrice = IEventMgmtInstance.getTicketPrice(ticketId);
 
         // Calculate discount based on reward points
         uint256 maxDiscountPercent = 20; // Maximum discount is 20%
@@ -341,7 +341,7 @@ contract TicketMkt {
 
         discountedPrice = originalPrice - discount;
 
-        return (originalPrice, discountedPrice);
+        return discountedPrice;
     }
 
 

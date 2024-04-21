@@ -367,8 +367,6 @@ contract("TicketMister Tests", (accounts) => {
 
     const ticketPrice = web3.utils.toWei("1", "ether");
 
-    const payableValue = ticketPrice;
-
     const numberOfTickets = 10;
 
     await ticketMktInstance.createTicketCategory(
@@ -380,9 +378,12 @@ contract("TicketMister Tests", (accounts) => {
       { from: owner }
     );
 
-    await ticketMktInstance.buyTicket(12, { from: user1, value: payableValue });
+    const user1PayableValue = await ticketMktInstance.checkDiscountedPrice(12, { from: user1});
+    const user2PayableValue = await ticketMktInstance.checkDiscountedPrice(13, { from: user2});
 
-    await ticketMktInstance.buyTicket(13, { from: user2, value: payableValue });
+    await ticketMktInstance.buyTicket(12, { from: user1, value: user1PayableValue });
+
+    await ticketMktInstance.buyTicket(13, { from: user2, value: user2PayableValue });
 
     const refundAmount = await ticketMktInstance.getRefundAmount(eventId);
 
@@ -463,9 +464,8 @@ contract("TicketMister Tests", (accounts) => {
 
   it("Test Gift Ticket - For Resellers", async () => {
     const ticketPrice = web3.utils.toWei("1", "ether");
-    const payableValue = ticketPrice
     const ticketId = 2;
-
+    const payableValue = await ticketMktInstance.checkDiscountedPrice(ticketId, { from: user1});
 
     // User1 buys the ticket 
     const result = await ticketMktInstance.buyTicket(ticketId, {
@@ -473,7 +473,6 @@ contract("TicketMister Tests", (accounts) => {
       value: payableValue
     });
 
-  
     //User1 gifts the ticket to user2
     await ticketMktInstance.giftTicket(ticketId, user2, { from: user1 });
 
