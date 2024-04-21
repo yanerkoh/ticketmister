@@ -52,6 +52,8 @@ contract TicketMkt {
     event ticketBought(uint256 ticketId, address buyer, address seller);
     event ticketGifted(uint256 ticketId, address recipient);
     event RewardEarned(address indexed recipient, uint256 amount);
+    event RewardUsed(address indexed rewardUser, uint256 amount);
+
 
     event ticketRefunded(
         uint256 ticketId,
@@ -247,6 +249,11 @@ contract TicketMkt {
         uint256 discount = (rewardPoints[msg.sender] >= pointsForMaxDiscount) ? (ticketPrice * maxDiscountPercent / 100) :
                         (ticketPrice * rewardPoints[msg.sender] / 100 / discountPer100Points);
 
+        // Calculate the number of points used based on the discount granted
+        uint256 pointsUsed = (discount * 100 * 100) / (ticketPrice * discountPer100Points);
+        rewardPoints[msg.sender] = rewardPoints[msg.sender] > pointsUsed ? rewardPoints[msg.sender] - pointsUsed : 0;
+        emit RewardUsed(msg.sender, pointsUsed);
+           
         uint256 payableValue = ticketPrice - discount;
 
 
@@ -258,9 +265,24 @@ contract TicketMkt {
         address currentOwner = IEventMgmtInstance.getTicketOwner(ticketId);
         require(msg.sender != currentOwner, "You already own this ticket!");
 
+                // Check if the ticket seller is the event organiser
+        bool isEventOrganiser = IEventMgmtInstance.isEventOrganiser(
+            IEventMgmtInstance.getEventId(ticketId),
+            currentOwner
+        );
+
+        uint256 rewardsEarned = 0;
+        if (isEventOrganiser) {
+            // Calculate rewards earned
+            rewardsEarned = (payableValue * 10) / 100; // 10% of ticket price as rewards
+            rewardPoints[msg.sender] += rewardsEarned;
+            emit RewardEarned(msg.sender, rewardsEarned);
+        }
+
+
         // Calculate rewards earned
-        uint256 rewardsEarned = (payableValue * 10) / 100; // 10% of ticket price as rewards
-        rewardPoints[msg.sender] += rewardsEarned;
+        //uint256 rewardsEarned = (payableValue * 10) / 100; // 10% of ticket price as rewards
+        //rewardPoints[msg.sender] += rewardsEarned;
 
         // transfer to new owner
         IEventMgmtInstance.transferTicket(ticketId, msg.sender);
