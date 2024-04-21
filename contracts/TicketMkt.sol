@@ -7,18 +7,13 @@ import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./EventMgmt.sol";
 import "./TicketMgmt.sol";
 
-//import "./RewardToken.sol";
-
 contract TicketMkt {
     using SafeMath for uint256;
 
     IEventMgmt private IEventMgmtInstance;
 
-    //RewardToken private rewardToken;
-
     constructor(address _eventMgmtAddress) {
         IEventMgmtInstance = IEventMgmt(_eventMgmtAddress);
-        //rewardToken = RewardToken(_rewardTokenAddress);
     }
 
     // address of event organiser mapped to an array of eventIds
@@ -27,7 +22,7 @@ contract TicketMkt {
     mapping(address => uint256[]) private ticketsOwned;
     // eventId mapped to array of ticketIds of all tickets on sale (whether first sale or resale)
     mapping(uint256 => uint256[]) private ticketsOnSale;
-
+    // address of recipient mapped to reward points earned
     mapping(address => uint256) private rewardPoints;
 
     event EventCreated(
@@ -49,13 +44,13 @@ contract TicketMkt {
         uint256 numberOfTickets
     );
 
-    event ticketBought(uint256 ticketId, address buyer, address seller);
-    event ticketGifted(uint256 ticketId, address recipient);
+    event TicketBought(uint256 ticketId, address buyer, address seller);
+    event TicketGifted(uint256 ticketId, address recipient);
     event RewardEarned(address indexed recipient, uint256 amount);
     event RewardUsed(address indexed rewardUser, uint256 amount);
 
 
-    event ticketRefunded(
+    event TicketRefunded(
         uint256 ticketId,
         address refundRecipient,
         uint256 refundAmount
@@ -192,7 +187,7 @@ contract TicketMkt {
                 uint256 refundAmount = IEventMgmtInstance
                     .getOriginalTicketPrice(ticketId);
                 refundRecipient.transfer(refundAmount);
-                emit ticketRefunded(ticketId, refundRecipient, refundAmount);
+                emit TicketRefunded(ticketId, refundRecipient, refundAmount);
             }
 
             // remove from ticketsOwned
@@ -322,7 +317,7 @@ contract TicketMkt {
                 break;
             }
         }
-        emit ticketBought(ticketId, msg.sender, currentOwner);
+        emit TicketBought(ticketId, msg.sender, currentOwner);
         emit RewardEarned(msg.sender, rewardsEarned);
     }
 
@@ -383,7 +378,7 @@ contract TicketMkt {
         );
         require(recipient != address(0), "Invalid recipient!");
         IEventMgmtInstance.giftTicket(ticketId, recipient);
-        emit ticketGifted(ticketId, recipient);
+        emit TicketGifted(ticketId, recipient);
     }
 
     function unlistTicketFromResale(uint256 ticketId) public {
