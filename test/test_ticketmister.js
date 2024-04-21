@@ -219,10 +219,8 @@ contract("TicketMister Tests", (accounts) => {
     const ticketPrice = web3.utils.toWei("1", "ether");
     const numberOfTickets = 10;
 
-    // Use a non-organizer account to attempt category creation
-    const nonOrganizerAccount = user1; // Assuming this is not the event organizer
+    const nonOrganizerAccount = user1;
 
-    // Attempt to create category using the non-organizer account
     try {
         await ticketMktInstance.createTicketCategory(
             eventId,
@@ -233,10 +231,8 @@ contract("TicketMister Tests", (accounts) => {
             { from: nonOrganizerAccount }
         );
 
-        // If execution reaches here, the transaction did not revert as expected
         assert.fail("Category creation should have reverted for non-organizer");
     } catch (error) {
-        // Check if the error message contains revert reason or similar
         assert(
             error.message.includes("revert"),
             `Expected revert but got error: ${error.message}`
@@ -335,10 +331,11 @@ contract("TicketMister Tests", (accounts) => {
     const ownerOfTicket = await ticketMgmtInstance.getTicketOwner(ticketId);
     assert.equal(ownerOfTicket, user1, "The ticket owner should be user1 after purchase");
 
-    // Check for the 'TicketBought' event and 'RewardEarned' event
-    assert.equal(result.logs[0].event, "TicketBought", "Event ticketBought should be emitted");
+    // Check for the 'ticketBought' event and 'RewardUsed' event
+    assert.equal(result.logs[0].event, "RewardUsed", "Event RewardUsed should be emitted");
     assert.equal(result.logs[1].event, "RewardEarned", "Event RewardEarned should be emitted");
-    assert.equal(result.logs[0].args.buyer, user1, "The buyer in the event should be user1");
+    assert.equal(result.logs[2].event, "TicketBought", "Event TicketBought should be emitted");
+    assert.equal(result.logs[2].args.buyer, user1, "The buyer in the event should be user1");
 
   });
 
@@ -353,7 +350,7 @@ contract("TicketMister Tests", (accounts) => {
     
     const maxResalePercentage = 20;
 
-    const result = await ticketMktInstance.createEvent(
+    await ticketMktInstance.createEvent(
       eventName,
       eventDescription,
       eventLocation,
@@ -370,9 +367,11 @@ contract("TicketMister Tests", (accounts) => {
 
     const ticketPrice = web3.utils.toWei("1", "ether");
 
+    const payableValue = ticketPrice;
+
     const numberOfTickets = 10;
 
-    const createCategoryResult = await ticketMktInstance.createTicketCategory(
+    await ticketMktInstance.createTicketCategory(
       eventId,
       categoryName,
       categoryDescription,
@@ -381,9 +380,9 @@ contract("TicketMister Tests", (accounts) => {
       { from: owner }
     );
 
-    await ticketMktInstance.buyTicket(12, { from: user1, value: ticketPrice });
+    await ticketMktInstance.buyTicket(12, { from: user1, value: payableValue });
 
-    await ticketMktInstance.buyTicket(13, { from: user2, value: ticketPrice });
+    await ticketMktInstance.buyTicket(13, { from: user2, value: payableValue });
 
     const refundAmount = await ticketMktInstance.getRefundAmount(eventId);
 

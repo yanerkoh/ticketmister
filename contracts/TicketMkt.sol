@@ -318,7 +318,6 @@ contract TicketMkt {
             }
         }
         emit TicketBought(ticketId, msg.sender, currentOwner);
-        emit RewardEarned(msg.sender, rewardsEarned);
     }
 
     function checkRewardPointsBalance(
