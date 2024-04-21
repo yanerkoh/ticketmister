@@ -81,6 +81,13 @@ contract("TicketMister Tests", (accounts) => {
 
     const emittedEventId = eventCreated.args.eventId.toNumber();
 
+    const event = await ticketMktInstance.getEventInfo(emittedEventId);
+
+    assert.isTrue(
+      event.isActive,
+      "Event should be active after creation"
+    );
+
     const emittedEventName = eventCreated.args.eventName;
 
     const emittedEventOrganiser = eventCreated.args.eventOrganiser;
@@ -180,6 +187,61 @@ contract("TicketMister Tests", (accounts) => {
       numberOfTickets,
       "Number of tickets does not match"
     );
+
+    const tickets = await ticketMktInstance.getCategoryTickets(emittedCategoryId);
+
+    assert.equal(
+        tickets.length,
+        numberOfTickets,
+        "Number of tickets should match"
+    );
+
+    const ticketsOnSale = await ticketMktInstance.getTicketsOnSale(eventId);
+
+    const ticketIdsOnSale = ticketsOnSale.map(ticketBN => ticketBN.toNumber());
+
+    for (let i = 0; i < tickets.length; i++) {
+        const ticketId = tickets[i];
+        const ticketIdBN = new BigNumber(ticketId);
+        const isOnSale = ticketIdsOnSale.includes(ticketIdBN.toNumber());
+        assert.isTrue(
+            isOnSale,
+            `Ticket with ID ${ticketId} should be on sale for event ${eventId}`
+        );
+    }
+        
+  });
+
+  it("Creation of category cannot be done by a user who is not the event organiser", async () => {
+    const eventId = 1;
+    const categoryName = "Test Cat 2";
+    const categoryDescription = "This is a test category 2.";
+    const ticketPrice = web3.utils.toWei("1", "ether");
+    const numberOfTickets = 10;
+
+    // Use a non-organizer account to attempt category creation
+    const nonOrganizerAccount = user1; // Assuming this is not the event organizer
+
+    // Attempt to create category using the non-organizer account
+    try {
+        await ticketMktInstance.createTicketCategory(
+            eventId,
+            categoryName,
+            categoryDescription,
+            ticketPrice,
+            numberOfTickets,
+            { from: nonOrganizerAccount }
+        );
+
+        // If execution reaches here, the transaction did not revert as expected
+        assert.fail("Category creation should have reverted for non-organizer");
+    } catch (error) {
+        // Check if the error message contains revert reason or similar
+        assert(
+            error.message.includes("revert"),
+            `Expected revert but got error: ${error.message}`
+        );
+    }
   });
 
   it("Test Updating of Event Description", async () => {
