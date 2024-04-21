@@ -367,8 +367,9 @@ contract TicketMkt {
     }
 
     function giftTicket(uint256 ticketId, address recipient) public {
+        address currentOwner = IEventMgmtInstance.getTicketOwner(ticketId);
         require(
-            IEventMgmtInstance.getTicketOwner(ticketId) == msg.sender,
+            currentOwner == msg.sender,
             "You do not own this ticket!"
         );
         require(
@@ -377,6 +378,22 @@ contract TicketMkt {
         );
         require(recipient != address(0), "Invalid recipient!");
         IEventMgmtInstance.giftTicket(ticketId, recipient);
+
+        for (
+            // iterate through ticketsOwned for previous owner
+            uint256 index = 0;
+            index < ticketsOwned[currentOwner].length;
+            index++
+        ) {
+            // find the ticketId in the array
+            if (ticketsOwned[currentOwner][index] == ticketId) {
+                removeTicketFromTicketsOwned(currentOwner, index);
+                break;
+            }
+        }
+
+        // update mappings
+        ticketsOwned[recipient].push(ticketId);
         emit TicketGifted(ticketId, recipient);
     }
 
